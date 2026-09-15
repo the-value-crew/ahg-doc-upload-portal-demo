@@ -1,0 +1,76 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+    html {
+        font-family: 'Montserrat', Arial, Helvetica, sans-serif;
+        color: #1A1A1A;
+        background-color: #FAFAFA;
+    }
+
+    body {
+        font-family: 'Montserrat', Arial, Helvetica, sans-serif;
+        color: #1A1A1A;
+        background-color: #FAFAFA;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+    }
+
+    h1, h2, h3, h4, h5, h6 {
+        font-family: 'Montserrat', Arial, Helvetica, sans-serif;
+        color: #1A1A1A;
+        letter-spacing: -0.02em;
+    }
+}
+
+.upload-table {
+    @apply w-full border-collapse;
+
+    thead {
+        @apply bg-[#F9FAFB] text-[#4B5563] border-b border-[#E5E7EB];
+
+        th {
+            @apply py-3.5 px-4 font-bold text-xs uppercase tracking-wider text-[#4B5563];
+        }
+    }
+
+    th,
+    td {
+        @apply text-left p-4 text-[#1A1A1A];
+    }
+
+    tbody tr {
+        @apply border-b border-[#F3F4F6] transition-colors duration-150;
+
+        &:hover {
+            @apply bg-[#F9FAFB];
+        }
+    }
+}
+
+// AHG Pay Button Rules: Cyan background (#02F1DE) with Black text (#000000)
+.btn-cyan {
+    background-color: #02F1DE;
+    color: #000000;
+    font-weight: 700;
+    transition: all 0.2s ease-in-out;
+
+    &:hover {
+        background-color: #00dbc9;
+        box-shadow: 0 4px 14px rgba(2, 241, 222, 0.35);
+    }
+
+    &:disabled {
+        opacity: 0.45;
+        cursor: not-allowed;
+        box-shadow: none;
+    }
+}
+
+// fix for recharts focus outline
+.recharts-pie {
+    g {
+        @apply focus:outline-none;
+    }
+}
