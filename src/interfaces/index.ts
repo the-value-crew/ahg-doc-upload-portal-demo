@@ -37,3 +37,18 @@ export interface ERCFile {
     fileExt: string
     contentType: string
 }
+
+export interface ContactPerson {
+    id: string;
+    name: string;
+    email: string;
+    role: string;
+    department?: string;
+    phone?: string;
+    avatarUrl?: string;
+    initials: string;
+    statusText?: string;
+    availability?: string;
+    directNote?: string;
+    isPrimary?: boolean;
+}
