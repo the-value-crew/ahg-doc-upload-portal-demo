@@ -11,7 +11,10 @@
     "preview": "wrangler dev",
     "cf-typegen": "wrangler types",
     "db:migrate:local": "CI=true wrangler d1 migrations apply DB --local",
+    "db:migrate:remote": "wrangler d1 migrations apply DB --remote",
+    "db:migrate:remote:status": "wrangler d1 migrations list DB --remote",
     "db:reset:local": "rm -rf .wrangler/state/v3/d1 .wrangler/state/v3/r2 && CI=true wrangler d1 migrations apply DB --local",
+    "seed:documents": "node scripts/generate_seed_documents.js",
     "sharepoint:tree": "node scripts/fetch-sharepoint-tree.js"
   },
   "dependencies": {
