@@ -20,7 +20,6 @@ function AppIntro({ industryConfig }: AppIntroProps) {
   return (
     <>
       <div className="flex items-center space-x-2 mb-3">
-        <span className="inline-block w-2.5 h-2.5 bg-[#02F1DE] rounded-full"></span>
         <span className="uppercase text-xs font-bold tracking-widest text-gray-500">
           {industryName}
         </span>

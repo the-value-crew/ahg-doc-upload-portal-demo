@@ -43,7 +43,7 @@ function UploadTable({
     onRefresh()
     setTimeout(() => {
       setLoading(false)
-      toast.success('Document status synchronized', toastConfig)
+      toast.success('Documents refreshed', toastConfig)
     }, 600)
   }
 
@@ -62,9 +62,8 @@ function UploadTable({
         {!adminMode && (
           <button
             disabled={loading}
-            className={`w-9 h-9 rounded-full border border-gray-200 bg-white hover:bg-gray-100 transition-colors shadow-2xs flex items-center justify-center ${
-              loading ? 'animate-spin' : ''
-            }`}
+            className={`w-9 h-9 rounded-full border border-gray-200 bg-white hover:bg-gray-100 transition-colors shadow-2xs flex items-center justify-center ${loading ? 'animate-spin' : ''
+              }`}
             onClick={handleRefreshBtnClick}
             title="Sync document statuses"
           >
@@ -78,8 +77,8 @@ function UploadTable({
           <thead>
             <tr className="bg-gray-50/70 border-b border-gray-200 text-xs font-semibold text-gray-500 uppercase tracking-wider">
               <th className="w-1/2 py-3 px-4">Document Item & Requirements</th>
-              <th className="w-1/6 py-3 px-4 whitespace-nowrap">Verification</th>
-              <th className="w-1/3 py-3 px-4">{adminMode ? 'Submission & Actions' : 'Submission & Vault File'}</th>
+              <th className="w-1/6 py-3 px-4 whitespace-nowrap">Status</th>
+              <th className="w-1/3 py-3 px-4">{adminMode ? 'Actions' : 'File Upload'}</th>
               <th className="w-12 py-3 px-4 text-right"></th>
             </tr>
           </thead>

@@ -688,46 +688,9 @@ export default function AdminPage() {
                 <FiArrowLeft className="text-sm" />
                 <span>Back to Merchants</span>
               </button>
-
-              <div className="h-6 w-px bg-gray-300 hidden sm:block"></div>
-
-              <div>
-                <h1 className="text-2xl font-bold tracking-tight text-gray-900">
-                  {detailData?.merchant?.name || selectedMerchantId}
-                </h1>
-                <div className="flex items-center gap-2 mt-0.5 text-xs text-gray-500">
-                  <span className="px-2 py-0.5 rounded-full bg-teal-50 text-teal-800 border border-teal-200 font-semibold">
-                    {detailData?.industry?.label || 'Standard Underwriting'}
-                  </span>
-                  {detailData?.merchant?.processor && (
-                    <span className="px-2 py-0.5 rounded-full bg-blue-50 text-blue-800 border border-blue-200 font-semibold">
-                      Processor: {detailData.merchant.processor}
-                    </span>
-                  )}
-                  <span className="font-mono text-gray-400">ID: {selectedMerchantId}</span>
-                </div>
-              </div>
             </div>
 
             <div className="flex items-center gap-3">
-              {/* Inline Underwriting Stage Selector in Header */}
-              {detailData?.merchant && (
-                <div className="flex items-center gap-1.5">
-                  <span className="text-xs text-gray-500 font-semibold">Stage:</span>
-                  <select
-                    value={detailData.merchant.status}
-                    onChange={(e) => handleUpdateMerchantStatus(selectedMerchantId!, parseInt(e.target.value, 10))}
-                    className="text-xs font-bold rounded-lg border border-gray-300 py-1.5 px-2 bg-white text-gray-800 focus:outline-none focus:ring-2 focus:ring-teal-500"
-                  >
-                    <option value={1}>1. Onboarding booked</option>
-                    <option value={2}>2. Doc Collection</option>
-                    <option value={3}>3. Application in review</option>
-                    <option value={4}>4. Approved</option>
-                    <option value={5}>5. Live and processing</option>
-                  </select>
-                </div>
-              )}
-
               <a
                 href={`/?merchant=${encodeURIComponent(selectedMerchantId || '')}`}
                 target="_blank"
@@ -760,8 +723,8 @@ export default function AdminPage() {
                 stats={detailData.stats}
                 userStatus={detailData.merchant.status as UserStatus}
                 stages={detailData.stages}
-                title="Underwriting Pipeline & Stats"
-                subtitle={`Verification progress for ${detailData.merchant.name} (${detailData.industry?.label})`}
+                title={detailData.merchant.name}
+                subtitle={`Industry: ${detailData.industry?.label} | Processor: ${detailData.merchant.processor} | ID: ${selectedMerchantId}`}
               />
 
               {/* BOTTOM SECTION: Sectioned Document Tables matching Portal layout */}

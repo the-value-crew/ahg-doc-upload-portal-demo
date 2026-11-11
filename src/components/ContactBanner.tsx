@@ -13,11 +13,11 @@ export default function ContactBanner({ supportContact }: ContactBannerProps) {
 
   const initials = supportContact.name
     ? supportContact.name
-        .split(' ')
-        .map((w) => w[0])
-        .join('')
-        .slice(0, 2)
-        .toUpperCase()
+      .split(' ')
+      .map((w) => w[0])
+      .join('')
+      .slice(0, 2)
+      .toUpperCase()
     : 'US'
 
   const copyEmail = () => {
@@ -37,12 +37,8 @@ export default function ContactBanner({ supportContact }: ContactBannerProps) {
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <span className="text-xs font-semibold uppercase tracking-wider text-gray-500">
-                Your Dedicated Point of Contact:
-              </span>
               <span className="font-bold text-sm text-gray-900 flex items-center gap-1">
                 {supportContact.name}
-                <FiUserCheck className="inline text-[#059669] w-3.5 h-3.5" />
               </span>
             </div>
             <p className="text-xs text-gray-500">

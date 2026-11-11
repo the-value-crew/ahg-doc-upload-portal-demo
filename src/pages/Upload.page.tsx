@@ -31,7 +31,7 @@ function UploadPage() {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
             </svg>
           </div>
-          <h2 className="text-xl font-bold text-gray-900 mb-2">Account Lookup Notice</h2>
+          <h2 className="text-xl font-bold text-gray-900 mb-2">Not found</h2>
           <p className="text-sm text-gray-600 mb-6 leading-relaxed">{error}</p>
           <button
             onClick={reload}
@@ -80,15 +80,6 @@ function UploadPage() {
 
         {/* Express Document Submission Dropzone Section */}
         <section className="container">
-          <div className="mb-6">
-            <span className="text-xs font-bold uppercase tracking-wider text-gray-500 block mb-1">
-              Express Document Submission
-            </span>
-            <h2 className="text-2xl md:text-3xl font-black text-[#1A1A1A] uppercase tracking-tight">
-              {config.brand?.title || 'Upload Documents'}
-            </h2>
-          </div>
-
           <Dropzone
             mode={DropzoneMode.LARGE}
             onFileUpload={refresh}

@@ -68,7 +68,6 @@ function StatusPieChart({ stats, userStatus, stages }: StatusPieChartProps) {
     <div className="w-full max-w-sm bg-white rounded-2xl p-6 shadow-sm border border-gray-100 flex flex-col items-center">
       <div className="w-full flex items-center justify-between pb-3 border-b border-gray-100 mb-2">
         <div className="flex items-center space-x-2">
-          <span className="w-2.5 h-2.5 rounded-full bg-[#02F1DE]"></span>
           <h3 className="text-xs font-bold uppercase tracking-wider text-[#1A1A1A]">
             Underwriting Status
           </h3>

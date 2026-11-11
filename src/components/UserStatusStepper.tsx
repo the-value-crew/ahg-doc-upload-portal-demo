@@ -71,18 +71,7 @@ function UserStatusStepper({ status, stages }: UserStatusStepperProps) {
         : defaultStages
 
     return (
-        <div className="w-full p-6 md:p-8">
-            <div className="flex items-center justify-between mb-6 pb-4 border-b border-[#F3F4F6]">
-                <div className="flex items-center space-x-2">
-                    <span className="w-2.5 h-2.5 rounded-full bg-[#02F1DE]"></span>
-                    <h3 className="text-xs font-bold uppercase tracking-wider text-[#4B5563]">
-                        Merchant Onboarding Pipeline
-                    </h3>
-                </div>
-                <span className="text-xs font-bold text-[#000000] bg-[#02F1DE] px-3 py-1 rounded-full">
-                    Stage {status} of {statusKeys.length}
-                </span>
-            </div>
+        <div className="w-full p-6 md:p-8 py-8 md:py-12">
             <div className="flex items-center w-full pt-2 pb-8">
                 {statusKeys.map((statusName, index) => (
                     <StepperStep

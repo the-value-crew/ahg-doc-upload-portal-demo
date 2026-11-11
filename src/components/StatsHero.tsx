@@ -30,7 +30,6 @@ export default function StatsHero({
         <div>
           <div className="flex items-center justify-between pb-3 border-b border-gray-100 mb-4">
             <div className="flex items-center space-x-2">
-              <span className="w-2.5 h-2.5 rounded-full bg-[#02F1DE]"></span>
               <h3 className="text-xs font-bold uppercase tracking-wider text-gray-900">{title}</h3>
             </div>
             <span className="text-xs font-bold text-gray-500">Stage {userStatus} of 5</span>

@@ -88,39 +88,37 @@ export async function handleUpload(request: Request, env: Env): Promise<Response
     }
   }
 
-  // 3. Upload to Cloudflare R2 (local/persistent) and/or SharePoint
+  // 3. Upload to Cloudflare R2 bucket
+  if (!env.DOCS_BUCKET) {
+    return new Response(JSON.stringify({ error: 'R2 bucket (DOCS_BUCKET) is not configured' }), {
+      status: 500,
+      headers: { 'Content-Type': 'application/json' },
+    })
+  }
+
   const filename = file.name || `document_${documentType}.pdf`
-  let sharepointItemId: string | undefined
+  const r2Key = `merchants/${merchant.id}/${documentType}_${Date.now()}_${filename}`
 
-  if (env.DOCS_BUCKET) {
-    try {
-      const r2Key = `merchants/${merchant.id}/${documentType}_${Date.now()}_${filename}`
-      await env.DOCS_BUCKET.put(r2Key, file.stream(), {
-        httpMetadata: {
-          contentType: file.type || 'application/octet-stream',
-        },
-        customMetadata: {
-          merchantId: merchant.id,
-          documentType: String(documentType),
-          originalFilename: filename,
-        },
-      })
-      sharepointItemId = `r2:${r2Key}`
-    } catch (r2Err: any) {
-      console.warn('R2 upload failed/skipped:', r2Err.message)
-    }
+  try {
+    await env.DOCS_BUCKET.put(r2Key, file.stream(), {
+      httpMetadata: {
+        contentType: file.type || 'application/octet-stream',
+      },
+      customMetadata: {
+        merchantId: merchant.id,
+        documentType: String(documentType),
+        originalFilename: filename,
+      },
+    })
+  } catch (r2Err: any) {
+    console.error('R2 upload failed:', r2Err)
+    return new Response(JSON.stringify({ error: 'Failed to upload document to R2 bucket: ' + r2Err.message }), {
+      status: 500,
+      headers: { 'Content-Type': 'application/json' },
+    })
   }
 
-  // Also attempt SharePoint upload if configured
-  if (!sharepointItemId) {
-    try {
-      const spResult = await uploadToSharepoint(env, merchant.name, filename, file.stream())
-      sharepointItemId = spResult.id
-    } catch (err: any) {
-      console.warn('SharePoint upload skipped/failed (using fallback ID):', err.message)
-      sharepointItemId = `sp-item-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`
-    }
-  }
+  const sharepointItemId = `r2:${r2Key}`
 
   // 4. Record/upsert document in D1 with status = 1 (Pending) and note = NULL (clears rejection note upon re-upload)
   const now = new Date().toISOString()
