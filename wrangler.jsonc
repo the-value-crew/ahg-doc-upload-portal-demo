@@ -16,15 +16,15 @@
   "d1_databases": [
     {
       "binding": "DB",
-      "database_name": "ahg-portal",
-      "database_id": "local-dev-portal-id",
+      "database_name": "ahg-doc-upload-portal",
+      "database_id": "d2acc83b-3fd9-4400-ad20-22f39a00f12a",
       "migrations_dir": "migrations"
     }
   ],
   "r2_buckets": [
     {
       "binding": "DOCS_BUCKET",
-      "bucket_name": "ahg-documents"
+      "bucket_name": "ahg-doc-upload-portal-documents"
     }
   ],
   "vars": {

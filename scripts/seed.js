@@ -139,47 +139,47 @@ const industriesData = {
     licensingNote: "State regulatory licenses, trade registrations, and applicable professional permits. Policies must display legal entity name, phone, and customer service email. Contact for West Town Checking Accounts: Ross Sloan (rsloan@dartbank.com), Caitlin Berlin (cberlin@dartbank.com).",
     sections: [
       {
-        id: "corporate",
-        title: "Corporate & Identity Documents",
+        id: "core",
+        title: "Core Documents",
         description: "Essential legal identification for business entity and owners.",
         documents: [
           { type: 101, name: "Articles of Incorporation", description: "State-filed formation document.", required: true, tag: null },
-          { type: 102, name: "SS-4 / EIN Letter or Tax Return", description: "Official IRS tax ID confirmation or completed tax return.", required: true, tag: null },
-          { type: 103, name: "Voided Check or Bank Letter", description: "Pre-printed check or signed bank officer letter for settlements.", required: true, tag: null },
+          { type: 102, name: "SS4/EIN Letter or Tax Return", description: "Official IRS tax ID confirmation or completed tax return.", required: true, tag: null },
+          { type: 103, name: "Voided Check OR Signed Bank Letter", description: "Pre-printed check or signed bank officer letter for settlements.", required: true, tag: null },
           { type: 104, name: "Driver's Licenses (up to 4)", description: "Color photo ID for all 25%+ equity owners.", required: true, tag: null },
-          { type: 105, name: "Operating Agreement (LLC) / Bylaws (Corp)", description: "Internal company governance and signatory authority docs.", required: false, tag: null },
+          { type: 105, name: "Operating Agreement(LLC) Bylaws (Corp)", description: "Internal company governance and signatory authority docs.", required: false, tag: null },
           { type: 106, name: "Utility Bill for Business Address", description: "Recent utility bill for physical business address verification (for ACH / Low-Risk accounts).", required: false, tag: null }
         ]
       },
       {
         id: "financial",
-        title: "Financial & Processing History",
+        title: "Financial Documents",
         description: "Required to establish volume tiers and underwriting limits.",
         documents: [
-          { type: 201, name: "Bank Statements (2-3 Months)", description: "Recent primary operating account statements (2 months for ACH, 3 months for card processing; personal if no business).", required: true, tag: null },
-          { type: 202, name: "Processing Statements (2-3 Months)", description: "Current/prior merchant processing history (if available).", required: false, tag: null },
-          { type: 203, name: "Financial Statements / Tax Returns (2 Years)", description: "Balance sheet, P&L, or signed tax filings for high limits.", required: false, tag: null }
+          { type: 201, name: "3 Months Bank Statements (personal if no business)", description: "Recent primary operating account statements (2 months for ACH, 3 months for card processing; personal if no business).", required: true, tag: null },
+          { type: 202, name: "3 Months Most Recent Processing Statements", description: "Current/prior merchant processing history (if available).", required: false, tag: null },
+          { type: 203, name: "2 Years Financials for all Applications", description: "Balance sheet, P&L, or signed tax filings for high limits.", required: false, tag: null }
         ]
       },
       {
         id: "compliance",
-        title: "Operations & Compliance Verification",
+        title: "Compliance Documents",
         description: "Operational, inventory, and online compliance verification.",
         documents: [
-          { type: 301, name: "Website Compliance Review", description: "Terms of Service, Privacy Policy, and Refund Policy with legal entity name matching government filings; phone and customer service email in contact area.", required: true, tag: null },
-          { type: 302, name: "Fulfillment Agreement / 3PL Contract", description: "Proof of warehousing and fulfillment logistics (if using 3PL).", required: false, tag: null },
-          { type: 303, name: "Site & Inventory Photos", description: "Photos of inventory, storage, and packaging facility.", required: false, tag: null },
+          { type: 301, name: "Website Compliance", description: "Terms of Service, Privacy Policy, and Refund Policy with legal entity name matching government filings; phone and customer service email in contact area.", required: true, tag: null },
+          { type: 302, name: "Fulfillment Agreement (if using 3PL)", description: "Proof of warehousing and fulfillment logistics (if using 3PL).", required: false, tag: null },
+          { type: 303, name: "Site/Inventory Photos", description: "Photos of inventory, storage, and packaging facility.", required: false, tag: null },
           { type: 307, name: "Proof of Domain Ownership", description: "Registrar receipt showing company as registrant.", required: true, tag: null }
         ]
       },
       {
         id: "signatures",
-        title: "Required Signatures & Addenda",
+        title: "Signature Documents",
         description: "Standard merchant agreements requiring verified e-signatures.",
         documents: [
-          { type: 501, name: "Compliance Monitoring Agreement", description: "Monthly third-party web compliance scan authorization.", required: true, tag: "Signature Doc" },
-          { type: 502, name: "Reserve & Settlement Schedule Acknowledgement", description: "Rolling reserve policy terms and sign-off.", required: true, tag: "Signature Doc" },
-          { type: 504, name: "WTP Sole Member Affidavit", description: "Required for single-member LLCs or sole proprietorships.", required: false, tag: "Signature Doc" }
+          { type: 501, name: "Compliance Monitoring Form", description: "Monthly third-party web compliance scan authorization.", required: true, tag: "Signature Doc" },
+          { type: 502, name: "Reserve Acknowledgement", description: "Rolling reserve policy terms and sign-off.", required: true, tag: "Signature Doc" },
+          { type: 504, name: "WTP Sole Member Affidavit (single-member LLC)", description: "Required for single-member LLCs or sole proprietorships.", required: false, tag: "Signature Doc" }
         ]
       }
     ]
@@ -191,51 +191,51 @@ const industriesData = {
     licensingNote: "12-23 months third-party lab COAs for all kratom alkaloid profiles, online COA portal links, complete e-commerce product catalog, and state AKA compliance verification. Contact for West Town Checking Accounts: Ross Sloan (rsloan@dartbank.com), Caitlin Berlin (cberlin@dartbank.com).",
     sections: [
       {
-        id: "corporate",
-        title: "Corporate & Identity Documents",
+        id: "core",
+        title: "Core Documents",
         description: "Essential legal identification for business entity and owners.",
         documents: [
           { type: 101, name: "Articles of Incorporation", description: "State-filed formation document.", required: true, tag: null },
-          { type: 102, name: "SS-4 / EIN Letter", description: "Official IRS tax ID confirmation.", required: true, tag: null },
-          { type: 103, name: "Voided Check or Bank Letter", description: "Pre-printed check or signed bank officer letter for settlements.", required: true, tag: null },
+          { type: 102, name: "SS4/EIN Letter", description: "Official IRS tax ID confirmation.", required: true, tag: null },
+          { type: 103, name: "Voided Check OR Signed Bank Letter", description: "Pre-printed check or signed bank officer letter for settlements.", required: true, tag: null },
           { type: 104, name: "Driver's Licenses (max 2-4)", description: "Color photo ID for all 25%+ equity owners.", required: true, tag: null },
-          { type: 105, name: "Operating Agreement (LLC) / Bylaws (Corp)", description: "Internal governance and signatory authority docs.", required: false, tag: null }
+          { type: 105, name: "Operating Agreement(LLC) Bylaws (Corp)", description: "Internal governance and signatory authority docs.", required: false, tag: null }
         ]
       },
       {
         id: "financial",
-        title: "Financial & Processing History",
+        title: "Financial Documents",
         description: "Required to establish volume tiers and underwriting limits.",
         documents: [
-          { type: 201, name: "Bank Statements (Last 3 Months)", description: "All pages of primary operating account (personal if no business).", required: true, tag: null },
-          { type: 202, name: "Processing Statements (Last 3 Months)", description: "Current/prior merchant processing history (or N/A).", required: false, tag: null },
-          { type: 203, name: "Financial Statements / Tax Returns (2 Years)", description: "Balance sheet, P&L, or signed tax filings for high limits.", required: false, tag: null }
+          { type: 201, name: "3 Months Bank Statements (personal if no business)", description: "All pages of primary operating account (personal if no business).", required: true, tag: null },
+          { type: 202, name: "3 Months Most Recent Processing Statements", description: "Current/prior merchant processing history (if available).", required: false, tag: null },
+          { type: 203, name: "2 Years Financials for all Applications", description: "Balance sheet, P&L, or signed tax filings for high limits.", required: false, tag: null }
         ]
       },
       {
         id: "kratom_compliance",
-        title: "Kratom Compliance & Product Verification",
+        title: "Kratom-Specific Documents",
         description: "Mandatory botanical lab testing, product listings, and risk mitigation.",
         documents: [
-          { type: 401, name: "Full Panel Lab COAs (Last 12-23 Months)", description: "Third-party lab certificates showing alkaloid breakdown, heavy metals, and microbials (12 months for West Town, 23 months for Argyle).", required: true, tag: null },
-          { type: 309, name: "Product List for eComm / COA Catalog", description: "Complete product catalog of all kratom strains and formats (or retail COA ZIP file).", required: true, tag: null },
-          { type: 301, name: "Website Compliance Review", description: "Terms of Service, Privacy Policy, and Refund Policy matching legal entity; phone & email in contact area; AKA and state age restriction disclosures audit.", required: true, tag: null },
-          { type: 302, name: "Fulfillment Agreement / 3PL Contract", description: "Proof of warehousing, packaging, and fulfillment logistics (if using 3PL).", required: false, tag: null },
-          { type: 303, name: "Site & Inventory Photos", description: "Clear photos of current inventory whether merchant or 3PL ships.", required: false, tag: null },
+          { type: 401, name: "COAs (12 months if not on website / 23 months for Argyle)", description: "Third-party lab certificates showing alkaloid breakdown, heavy metals, and microbials (12 months for West Town, 23 months for Argyle).", required: true, tag: null },
+          { type: 309, name: "Product List for eComm / COA Zip File for Retail", description: "Complete product catalog of all kratom strains and formats (or retail COA ZIP file).", required: true, tag: null },
+          { type: 301, name: "Website Compliance", description: "Terms of Service, Privacy Policy, and Refund Policy matching legal entity; phone & email in contact area; AKA and state age restriction disclosures audit.", required: true, tag: null },
+          { type: 302, name: "Fulfillment Agreement (if using 3PL)", description: "Proof of warehousing, packaging, and fulfillment logistics (if using 3PL).", required: false, tag: null },
+          { type: 303, name: "Site/Inventory Photos", description: "Clear photos of current inventory whether merchant or 3PL ships.", required: false, tag: null },
           { type: 307, name: "Proof of Domain Ownership", description: "Registrar receipt or WHOIS record showing company as registrant.", required: true, tag: null }
         ]
       },
       {
         id: "signatures",
-        title: "Required Signatures & Addenda",
+        title: "Signature Documents",
         description: "Standard merchant agreements requiring verified e-signatures.",
         documents: [
-          { type: 501, name: "Compliance Monitoring Agreement", description: "Monthly third-party web compliance scan authorization.", required: true, tag: "Signature Doc" },
-          { type: 502, name: "Reserve & Settlement Schedule Acknowledgement", description: "Rolling reserve policy terms and sign-off.", required: true, tag: "Signature Doc" },
-          { type: 505, name: "Argyle Kratom Underwriting Addendum", description: "Specialized kratom industry terms and processing addendum.", required: true, tag: "Signature Doc" },
-          { type: 504, name: "WTP Sole Member Affidavit", description: "Required for single-member LLCs or sole proprietorships.", required: false, tag: "Signature Doc" },
-          { type: 508, name: "Argyle File Build Form", description: "Retail setup form with physical card terminal (if applicable).", required: false, tag: "Signature Doc" },
-          { type: 509, name: "Argyle Free Terminal Form", description: "Free terminal agreement (if marked by sales).", required: false, tag: "Signature Doc" },
+          { type: 501, name: "Compliance Monitoring Form", description: "Monthly third-party web compliance scan authorization.", required: true, tag: "Signature Doc" },
+          { type: 502, name: "Reserve Acknowledgement", description: "Rolling reserve policy terms and sign-off.", required: true, tag: "Signature Doc" },
+          { type: 505, name: "Argyle Kratom Addendum", description: "Specialized kratom industry terms and processing addendum.", required: true, tag: "Signature Doc" },
+          { type: 504, name: "WTP Sole Member Affidavit (single-member LLC)", description: "Required for single-member LLCs or sole proprietorships.", required: false, tag: "Signature Doc" },
+          { type: 508, name: "Argyle File Build Form (retail w/ terminal)", description: "Retail setup form with physical card terminal (if applicable).", required: false, tag: "Signature Doc" },
+          { type: 509, name: "Argyle Free Terminal Form (if marked by Sales)", description: "Free terminal agreement (if marked by sales).", required: false, tag: "Signature Doc" },
           { type: 511, name: "Argyle NABCO Cross-Corp Agreement", description: "Cross-corporate indemnity for multiple related entities.", required: false, tag: "Signature Doc" },
           { type: 510, name: "SSB Policy Exception Waiver (No Reserve)", description: "Exception request waiver for qualifying high-volume merchants.", required: false, tag: "Signature Doc" }
         ]
@@ -249,51 +249,51 @@ const industriesData = {
     licensingNote: "Third-party COAs (<0.3% Delta-9 THC / compliant alkaloids; 12 months for West Town, 23 months for Argyle), published online product catalog, and mandatory website shipping disclaimer: 'We do not ship Amanita products to the state of Louisiana.' Contact for West Town Checking Accounts: Ross Sloan (rsloan@dartbank.com), Caitlin Berlin (cberlin@dartbank.com).",
     sections: [
       {
-        id: "corporate",
-        title: "Corporate & Identity Documents",
+        id: "core",
+        title: "Core Documents",
         description: "Essential legal identification for business entity and owners.",
         documents: [
           { type: 101, name: "Articles of Incorporation", description: "State-filed formation document.", required: true, tag: null },
-          { type: 102, name: "SS-4 / EIN Letter", description: "Official IRS tax ID confirmation.", required: true, tag: null },
-          { type: 103, name: "Voided Check or Bank Letter", description: "Pre-printed check or signed bank officer letter for settlements.", required: true, tag: null },
+          { type: 102, name: "SS4/EIN Letter", description: "Official IRS tax ID confirmation.", required: true, tag: null },
+          { type: 103, name: "Voided Check OR Signed Bank Letter", description: "Pre-printed check or signed bank officer letter for settlements.", required: true, tag: null },
           { type: 104, name: "Driver's Licenses (max 2-4)", description: "Color photo ID for all 25%+ equity owners.", required: true, tag: null },
-          { type: 105, name: "Operating Agreement (LLC) / Bylaws (Corp)", description: "Internal governance and signatory authority docs.", required: false, tag: null }
+          { type: 105, name: "Operating Agreement(LLC) Bylaws (Corp)", description: "Internal governance and signatory authority docs.", required: false, tag: null }
         ]
       },
       {
         id: "financial",
-        title: "Financial & Processing History",
+        title: "Financial Documents",
         description: "Required to establish volume tiers and underwriting limits.",
         documents: [
-          { type: 201, name: "Bank Statements (Last 3 Months)", description: "All pages of primary operating account (personal if no business).", required: true, tag: null },
-          { type: 202, name: "Processing Statements (Last 3 Months)", description: "Current/prior merchant processing history (or N/A).", required: false, tag: null },
-          { type: 203, name: "Financial Statements / Tax Returns (2 Years)", description: "Balance sheet, P&L, or signed tax filings for high limits.", required: false, tag: null }
+          { type: 201, name: "3 Months Bank Statements (personal if no business)", description: "All pages of primary operating account (personal if no business).", required: true, tag: null },
+          { type: 202, name: "3 Months Most Recent Processing Statements", description: "Current/prior merchant processing history (if available).", required: false, tag: null },
+          { type: 203, name: "2 Years Financials for all Applications", description: "Balance sheet, P&L, or signed tax filings for high limits.", required: false, tag: null }
         ]
       },
       {
         id: "mushroom_compliance",
-        title: "Mushroom / Metocin Compliance & Lab Verification",
+        title: "Mushroom-Specific Documents",
         description: "Critical risk mitigation, full panel COAs, and product catalog audits.",
         documents: [
-          { type: 401, name: "Full Panel Lab COAs (Last 12-23 Months)", description: "Third-party lab certificates of analysis for all functional mushroom & alkaloid formulations (12 months for West Town, 23 months for Argyle).", required: true, tag: null },
-          { type: 309, name: "Product List for eComm / COA Catalog", description: "Complete list of all alternative products sold online (or retail COA ZIP file).", required: true, tag: null },
-          { type: 301, name: "Website Compliance & Disclaimers", description: "Terms of Service, Privacy Policy, and Refund Policy matching legal entity; phone & email in contact area; mandatory Louisiana shipping restriction audit: 'We do not ship Amanita products to the state of Louisiana.'", required: true, tag: null },
-          { type: 302, name: "Fulfillment Agreement / 3PL Contract", description: "Proof of warehousing, packaging, and fulfillment logistics (if using 3PL).", required: false, tag: null },
-          { type: 303, name: "Site & Inventory Photos", description: "Clear photos of current inventory and packaging facility.", required: false, tag: null },
+          { type: 401, name: "COAs (12 months if not on website / 23 months for Argyle)", description: "Third-party lab certificates of analysis for all functional mushroom & alkaloid formulations (12 months for West Town, 23 months for Argyle).", required: true, tag: null },
+          { type: 309, name: "Product List for eComm / COA Zip File for Retail", description: "Complete list of all alternative products sold online (or retail COA ZIP file).", required: true, tag: null },
+          { type: 301, name: "Website Compliance", description: "Terms of Service, Privacy Policy, and Refund Policy matching legal entity; phone & email in contact area; mandatory Louisiana shipping restriction audit: 'We do not ship Amanita products to the state of Louisiana.'", required: true, tag: null },
+          { type: 302, name: "Fulfillment Agreement (if using 3PL)", description: "Proof of warehousing, packaging, and fulfillment logistics (if using 3PL).", required: false, tag: null },
+          { type: 303, name: "Site/Inventory Photos", description: "Clear photos of current inventory and packaging facility.", required: false, tag: null },
           { type: 307, name: "Proof of Domain Ownership", description: "Registrar receipt or WHOIS record showing company as registrant.", required: true, tag: null }
         ]
       },
       {
         id: "signatures",
-        title: "Required Signatures & Addenda",
+        title: "Signature Documents",
         description: "Standard merchant agreements requiring verified e-signatures.",
         documents: [
-          { type: 501, name: "Compliance Monitoring Agreement", description: "Monthly third-party web compliance scan authorization.", required: true, tag: "Signature Doc" },
-          { type: 502, name: "Reserve & Settlement Schedule Acknowledgement", description: "Rolling reserve policy terms and sign-off.", required: true, tag: "Signature Doc" },
-          { type: 506, name: "Argyle Mushroom & Metocin Addendum", description: "Specialized functional mushroom terms and conditions.", required: true, tag: "Signature Doc" },
-          { type: 504, name: "WTP Sole Member Affidavit", description: "Required for single-member LLCs or sole proprietorships.", required: false, tag: "Signature Doc" },
-          { type: 508, name: "Argyle File Build Form", description: "Retail setup form with physical card terminal (if applicable).", required: false, tag: "Signature Doc" },
-          { type: 509, name: "Argyle Free Terminal Form", description: "Free terminal agreement (if marked by sales).", required: false, tag: "Signature Doc" },
+          { type: 501, name: "Compliance Monitoring Form", description: "Monthly third-party web compliance scan authorization.", required: true, tag: "Signature Doc" },
+          { type: 502, name: "Reserve Acknowledgement", description: "Rolling reserve policy terms and sign-off.", required: true, tag: "Signature Doc" },
+          { type: 506, name: "Argyle Mushroom Addendum", description: "Specialized functional mushroom terms and conditions.", required: true, tag: "Signature Doc" },
+          { type: 504, name: "WTP Sole Member Affidavit (single-member LLC)", description: "Required for single-member LLCs or sole proprietorships.", required: false, tag: "Signature Doc" },
+          { type: 508, name: "Argyle File Build Form (retail w/ terminal)", description: "Retail setup form with physical card terminal (if applicable).", required: false, tag: "Signature Doc" },
+          { type: 509, name: "Argyle Free Terminal Form (if marked by Sales)", description: "Free terminal agreement (if marked by sales).", required: false, tag: "Signature Doc" },
           { type: 511, name: "Argyle NABCO Cross-Corp Agreement", description: "Cross-corporate indemnity for multiple related entities.", required: false, tag: "Signature Doc" }
         ]
       }
@@ -306,49 +306,49 @@ const industriesData = {
     licensingNote: "LegitScript healthcare merchant certification, active state board of pharmacy licenses for each state served, practitioner licensing for owners, and clinical compliance policies. Contact for West Town Checking Accounts: Ross Sloan (rsloan@dartbank.com), Caitlin Berlin (cberlin@dartbank.com).",
     sections: [
       {
-        id: "corporate",
-        title: "Corporate & Identity Documents",
+        id: "core",
+        title: "Core Documents",
         description: "Essential legal identification for business entity and owners.",
         documents: [
           { type: 101, name: "Articles of Incorporation", description: "State-filed professional corporation (PC/PLLC) or LLC formation.", required: true, tag: null },
-          { type: 102, name: "SS-4 / EIN Letter", description: "Official IRS tax ID confirmation.", required: true, tag: null },
-          { type: 103, name: "Voided Check or Bank Letter", description: "Pre-printed check or signed bank officer letter for settlements.", required: true, tag: null },
-          { type: 104, name: "Driver's Licenses / Passports (up to 4)", description: "Color photo ID for all 25%+ equity owners and managing physicians.", required: true, tag: null },
-          { type: 105, name: "Operating Agreement (LLC) / Bylaws (Corp)", description: "Professional entity bylaws or operating agreement.", required: false, tag: null }
+          { type: 102, name: "SS4/EIN Letter", description: "Official IRS tax ID confirmation.", required: true, tag: null },
+          { type: 103, name: "Voided Check OR Signed Bank Letter", description: "Pre-printed check or signed bank officer letter for settlements.", required: true, tag: null },
+          { type: 104, name: "Driver's Licenses (up to 4)", description: "Color photo ID for all 25%+ equity owners and managing physicians.", required: true, tag: null },
+          { type: 105, name: "Operating Agreement(LLC) Bylaws (Corp)", description: "Professional entity bylaws or operating agreement.", required: false, tag: null }
         ]
       },
       {
         id: "financial",
-        title: "Financial & Processing History",
+        title: "Financial Documents",
         description: "Required to establish volume tiers and underwriting limits.",
         documents: [
-          { type: 201, name: "Bank Statements (Last 3 Months)", description: "All pages of primary business operating account (personal if no business).", required: true, tag: null },
-          { type: 202, name: "Processing Statements (Last 3 Months)", description: "Current/prior merchant processing history (or N/A).", required: false, tag: null },
-          { type: 203, name: "Financial Statements / Tax Returns (2 Years)", description: "Balance sheet, P&L, or signed tax filings for high volume limits.", required: false, tag: null }
+          { type: 201, name: "3 Months Bank Statements (personal if no business)", description: "All pages of primary business operating account (personal if no business).", required: true, tag: null },
+          { type: 202, name: "3 Months Most Recent Processing Statements", description: "Current/prior merchant processing history (if available).", required: false, tag: null },
+          { type: 203, name: "2 Years Financials for all Applications", description: "Balance sheet, P&L, or signed tax filings for high volume limits.", required: false, tag: null }
         ]
       },
       {
-        id: "medical_compliance",
-        title: "Medical & Pharmacy Compliance Verification",
+        id: "telehealth_compliance",
+        title: "Telehealth-Specific Documents",
         description: "Mandatory clinical credentials, pharmacy licensing, and telehealth protocols.",
         documents: [
           { type: 313, name: "Telehealth & Online Pharmacy Questionnaire", description: "Clinical protocols, intake forms, and prescription fulfillment workflow questionnaire.", required: true, tag: "Google Form", formUrl: "https://docs.google.com/forms" },
           { type: 310, name: "LegitScript Certification", description: "LegitScript Healthcare Merchant Certification seal and approval letter.", required: true, tag: null },
           { type: 311, name: "State Board Pharmacy Licenses", description: "Active state board pharmacy licenses for each state in which medications are dispensed.", required: false, tag: "Wait to Request" },
-          { type: 312, name: "Practitioner / Physician Licenses", description: "Copy of active medical or pharmacy licenses for all owners and supervising practitioners.", required: true, tag: null },
-          { type: 301, name: "Website Compliance Review", description: "Terms of Service, Privacy Policy, HIPAA statement, and consultation workflow; phone & email in contact area; legal entity matching government filings.", required: true, tag: null },
-          { type: 302, name: "Fulfillment & Pharmacy Agreement", description: "Contract with partner dispensing pharmacy or 3PL logistics provider.", required: false, tag: null },
+          { type: 312, name: "Copy of Pharmacy / Practitioner License (Each Owner)", description: "Copy of active medical or pharmacy licenses for all owners and supervising practitioners.", required: true, tag: null },
+          { type: 301, name: "Website Compliance", description: "Terms of Service, Privacy Policy, HIPAA statement, and consultation workflow; phone & email in contact area; legal entity matching government filings.", required: true, tag: null },
+          { type: 302, name: "Fulfillment Agreement (if using 3PL)", description: "Contract with partner dispensing pharmacy or 3PL logistics provider.", required: false, tag: null },
           { type: 307, name: "Proof of Domain Ownership", description: "Registrar receipt showing company or practice as domain owner.", required: true, tag: null }
         ]
       },
       {
         id: "signatures",
-        title: "Required Signatures & Addenda",
+        title: "Signature Documents",
         description: "Standard merchant agreements requiring verified e-signatures.",
         documents: [
-          { type: 501, name: "Compliance Monitoring Agreement", description: "Monthly third-party web compliance scan authorization.", required: true, tag: "Signature Doc" },
-          { type: 502, name: "Reserve & Settlement Schedule Acknowledgement", description: "Rolling reserve policy terms and sign-off.", required: true, tag: "Signature Doc" },
-          { type: 504, name: "WTP Sole Member Affidavit", description: "Required for single-member LLCs or sole proprietorships.", required: false, tag: "Signature Doc" }
+          { type: 501, name: "Compliance Monitoring Form", description: "Monthly third-party web compliance scan authorization.", required: true, tag: "Signature Doc" },
+          { type: 502, name: "Reserve Acknowledgement", description: "Rolling reserve policy terms and sign-off.", required: true, tag: "Signature Doc" },
+          { type: 504, name: "WTP Sole Member Affidavit (single-member LLC)", description: "Required for single-member LLCs or sole proprietorships.", required: false, tag: "Signature Doc" }
         ]
       }
     ]
@@ -360,46 +360,46 @@ const industriesData = {
     licensingNote: "IRS 501(c)(3) or 501(c)(4) tax-exempt determination letter, current Board of Directors roster and meeting minutes, and donation transparency disclosures.",
     sections: [
       {
-        id: "corporate",
-        title: "Governance & Identity Documents",
+        id: "core",
+        title: "Core Documents",
         description: "Essential legal identification and IRS status for non-profit entities.",
         documents: [
           { type: 101, name: "Articles of Incorporation", description: "State-filed non-profit charter or articles of incorporation.", required: true, tag: null },
-          { type: 102, name: "SS-4 / EIN Letter", description: "Official IRS tax ID confirmation.", required: true, tag: null },
-          { type: 103, name: "Voided Check or Bank Letter", description: "Pre-printed check or signed bank officer letter for settlements.", required: true, tag: null },
-          { type: 104, name: "Driver's License of Responsible Party", description: "Color photo ID for Executive Director, President, or authorized officer.", required: true, tag: null },
-          { type: 105, name: "Bylaws & Governance Rules", description: "Signed organization bylaws detailing officer authority and voting rules.", required: true, tag: null },
-          { type: 107, name: "Proof of Non-Profit Status (501(c)(3) / 501(c)(4))", description: "IRS Tax-Exempt Status Determination Letter.", required: true, tag: null },
-          { type: 108, name: "Board of Directors Documentation", description: "Current roster of Board of Directors and document indicating board of directors if not apparent.", required: true, tag: null },
-          { type: 109, name: "Organization Meeting Minutes", description: "Recent meeting minutes of board meetings.", required: false, tag: null }
+          { type: 102, name: "SS4/EIN Letter", description: "Official IRS tax ID confirmation.", required: true, tag: null },
+          { type: 103, name: "Voided Check OR Signed Bank Letter", description: "Pre-printed check or signed bank officer letter for settlements.", required: true, tag: null },
+          { type: 104, name: "Driver's Licenses of Responsible Party", description: "Color photo ID for Executive Director, President, or authorized officer.", required: true, tag: null },
+          { type: 105, name: "Bylaws (Corp) / Operating Agreement", description: "Signed organization bylaws detailing officer authority and voting rules.", required: true, tag: null },
+          { type: 107, name: "Proof of Non-Profit Status (501(c)(3) or (4))", description: "IRS Tax-Exempt Status Determination Letter.", required: true, tag: null },
+          { type: 108, name: "Doc Indicating Board of Directors if not Apparent", description: "Current roster of Board of Directors and document indicating board of directors if not apparent.", required: true, tag: null },
+          { type: 109, name: "Minutes", description: "Recent meeting minutes of board meetings.", required: false, tag: null }
         ]
       },
       {
         id: "financial",
-        title: "Financial & Donation Records",
+        title: "Financial Documents",
         description: "Operating account banking history and grant or sponsorship records.",
         documents: [
-          { type: 201, name: "Bank Statements (Last 3 Months)", description: "All pages of primary non-profit checking account.", required: true, tag: null },
-          { type: 202, name: "Processing Statements (Last 3 Months)", description: "Current donation processing or merchant statements (if available).", required: false, tag: null },
-          { type: 314, name: "Partnership / Fiscal Sponsorship Agreement", description: "Copy of agreement between parties or fiscal sponsorship memorandum.", required: false, tag: null }
+          { type: 201, name: "3 Months Bank Statements (personal if no business)", description: "All pages of primary non-profit checking account (personal if no business).", required: true, tag: null },
+          { type: 202, name: "3 Months Most Recent Processing Statements", description: "Current donation processing or merchant statements (if available).", required: false, tag: null },
+          { type: 314, name: "Copy of Agreement Between Parties", description: "Copy of agreement between parties or fiscal sponsorship memorandum.", required: false, tag: null }
         ]
       },
       {
         id: "nonprofit_compliance",
-        title: "Public Transparency & Website Compliance",
+        title: "Nonprofit-Specific Documents",
         description: "Public donor disclosures, refund policies, and governance transparency.",
         documents: [
-          { type: 301, name: "Website Compliance & Disclosures", description: "Donation refund policy, privacy policy, 501(c) disclosure, phone and email in contact area.", required: true, tag: null },
+          { type: 301, name: "Website Compliance", description: "Donation refund policy, privacy policy, 501(c) disclosure, phone and email in contact area.", required: true, tag: null },
           { type: 307, name: "Proof of Domain Ownership", description: "Registrar receipt showing organization as domain owner.", required: true, tag: null }
         ]
       },
       {
         id: "signatures",
-        title: "Required Signatures & Addenda",
+        title: "Signature Documents",
         description: "Standard merchant agreements requiring verified e-signatures.",
         documents: [
-          { type: 501, name: "Compliance Monitoring Agreement", description: "Monthly web compliance and donation processing authorization.", required: true, tag: "Signature Doc" },
-          { type: 502, name: "Reserve & Settlement Schedule Acknowledgement", description: "Settlement terms and payout schedule sign-off.", required: true, tag: "Signature Doc" }
+          { type: 501, name: "Compliance Monitoring Form", description: "Monthly web compliance and donation processing authorization.", required: true, tag: "Signature Doc" },
+          { type: 502, name: "Reserve Acknowledgement", description: "Settlement terms and payout schedule sign-off.", required: true, tag: "Signature Doc" }
         ]
       }
     ]
