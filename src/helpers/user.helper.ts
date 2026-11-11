@@ -1,24 +1,37 @@
 import { UserStatus } from "../enums"
 
-interface StatusInfo {
+export interface StatusInfo {
     name: string
     color: string
     bgColor: string
 }
 
-export const statusInfo = (status: UserStatus): StatusInfo => {
-    switch (status) {
-        case UserStatus.APPLICATION_SUBMITTED:
-            return { name: "Application Submitted", color: '#4B5563', bgColor: '#F3F4F6' }
-        case UserStatus.DOCS_SUBMITTED:
-            return { name: "Documents Submitted", color: '#1E40AF', bgColor: '#DBEAFE' }
-        case UserStatus.UNDERWRITING_REVIEW:
-            return { name: "Underwriting Review", color: '#92400E', bgColor: '#FEF3C7' }
-        case UserStatus.GATEWAY_SETUP:
-            return { name: "Gateway Setup", color: '#065F46', bgColor: '#D1FAE5' }
-        case UserStatus.ACCOUNT_LIVE:
-            return { name: "Account Active & Live", color: '#065F46', bgColor: '#D1FAE5' }
-        default:
-            return { name: "Underwriting Review", color: '#92400E', bgColor: '#FEF3C7' }
+export const statusInfo = (
+    status: number | UserStatus,
+    customStageName?: string
+): StatusInfo => {
+    const s = Number(status)
+
+    const stageColors: Record<number, { name: string; color: string; bgColor: string }> = {
+        1: { name: "Onboarding booked", color: '#4B5563', bgColor: '#F3F4F6' },
+        2: { name: "Doc Collection", color: '#1E40AF', bgColor: '#DBEAFE' },
+        3: { name: "Application in review", color: '#92400E', bgColor: '#FEF3C7' },
+        4: { name: "Approved", color: '#065F46', bgColor: '#D1FAE5' },
+        5: { name: "Live and processing", color: '#065F46', bgColor: '#D1FAE5' },
     }
+
+    const current = stageColors[s] || {
+        name: `Stage ${s}`,
+        color: '#4B5563',
+        bgColor: '#F3F4F6',
+    }
+
+    if (customStageName) {
+        return {
+            ...current,
+            name: customStageName,
+        }
+    }
+
+    return current
 }

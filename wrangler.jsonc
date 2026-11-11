@@ -1,0 +1,38 @@
+/**
+ * Cloudflare Workers Static Assets & API Configuration
+ */
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "ahg-doc-upload-portal",
+  "main": "worker/index.ts",
+  "compatibility_date": "2024-11-01",
+  "compatibility_flags": ["nodejs_compat"],
+  "assets": {
+    "directory": "./dist",
+    "binding": "ASSETS",
+    "not_found_handling": "single-page-application",
+    "run_worker_first": ["/api/*", "/admin*"]
+  },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "ahg-portal",
+      "database_id": "local-dev-portal-id",
+      "migrations_dir": "migrations"
+    }
+  ],
+  "r2_buckets": [
+    {
+      "binding": "DOCS_BUCKET",
+      "bucket_name": "ahg-documents"
+    }
+  ],
+  "vars": {
+    "ALLOWED_PARENT_ORIGINS": "http://localhost:3000 http://localhost:5173 https://app.example.com",
+    "MAX_UPLOAD_BYTES": "26214400"
+  },
+  "observability": {
+    "enabled": true
+  }
+}
+

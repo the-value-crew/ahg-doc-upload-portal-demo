@@ -4,9 +4,15 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
-    "build": "tsc && vite build",
-    "preview": "vite preview"
+    "dev:ui": "vite",
+    "dev:worker": "wrangler dev --port 8787",
+    "dev": "concurrently -k -n ui,worker -c cyan,magenta \"npm run dev:ui\" \"npm run dev:worker\"",
+    "build": "tsc -b && vite build",
+    "preview": "wrangler dev",
+    "cf-typegen": "wrangler types",
+    "db:migrate:local": "CI=true wrangler d1 migrations apply DB --local",
+    "db:reset:local": "rm -rf .wrangler/state/v3/d1 .wrangler/state/v3/r2 && CI=true wrangler d1 migrations apply DB --local",
+    "sharepoint:tree": "node scripts/fetch-sharepoint-tree.js"
   },
   "dependencies": {
     "axios": "^1.2.1",
@@ -24,6 +30,7 @@
     "recharts": "^2.2.0"
   },
   "devDependencies": {
+    "@cloudflare/workers-types": "^5.20261106.1",
     "@types/feather-icons": "^4.29.1",
     "@types/file-saver": "^2.0.5",
     "@types/lodash": "^4.14.191",
@@ -31,11 +38,13 @@
     "@types/react-dom": "^18.0.9",
     "@vitejs/plugin-react-swc": "^3.0.0",
     "autoprefixer": "^10.4.13",
+    "concurrently": "^10.0.6",
     "postcss": "^8.4.20",
     "sass": "^1.57.0",
     "tailwindcss": "^3.2.4",
     "typescript": "^4.9.3",
     "vite": "^4.0.0",
-    "vite-plugin-mkcert": "^1.10.1"
+    "vite-plugin-mkcert": "^1.10.1",
+    "wrangler": "^4.158.0"
   }
 }

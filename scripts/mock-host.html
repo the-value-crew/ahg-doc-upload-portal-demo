@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Host App - Embedded Admin Verification</title>
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; padding: 24px; background: #f0f2f5; }
+    .card { background: white; border-radius: 8px; padding: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); max-width: 1000px; margin: 0 auto; }
+    .status-bar { background: #e0f2fe; color: #0369a1; padding: 10px 16px; border-radius: 6px; font-size: 13px; font-weight: 600; margin-bottom: 16px; }
+    iframe { width: 100%; border: 1px solid #e2e8f0; border-radius: 6px; min-height: 400px; transition: height 0.2s ease; }
+    .log-box { margin-top: 16px; background: #1e293b; color: #38bdf8; font-family: monospace; font-size: 12px; padding: 12px; border-radius: 6px; max-height: 150px; overflow-y: auto; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h2>Host Application (External Platform Simulator)</h2>
+    <div class="status-bar" id="status">Status: Waiting for iframe mount...</div>
+    
+    <iframe id="portalFrame" src="http://localhost:8787/admin"></iframe>
+
+    <div class="log-box" id="logBox">Host Event Log:</div>
+  </div>
+
+  <script>
+    const iframe = document.getElementById('portalFrame');
+    const status = document.getElementById('status');
+    const logBox = document.getElementById('logBox');
+
+    function log(msg) {
+      const line = document.createElement('div');
+      line.textContent = `[${new Date().toLocaleTimeString()}] ${msg}`;
+      logBox.appendChild(line);
+      logBox.scrollTop = logBox.scrollHeight;
+    }
+
+    // Replace with valid testing JWT token generated from /api/admin/login
+    let token = '';
+
+    // Fetch token for testing handshake automatically
+    fetch('http://localhost:8787/api/admin/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ password: 'admin1234' })
+    }).then(r => r.json()).then(data => {
+      token = data.token;
+      log('Host generated testing JWT from /api/admin/login');
+    });
+
+    window.addEventListener('message', (event) => {
+      log(`Received event: ${event.data?.type || 'unknown'}`);
+      
+      if (event.data?.type === 'IFRAME_MOUNTED') {
+        status.textContent = 'Status: Iframe Mounted! Sending AUTH_TOKEN & FILTER_TENANT...';
+        if (token) {
+          iframe.contentWindow.postMessage({ type: 'AUTH_TOKEN', token: token }, '*');
+          iframe.contentWindow.postMessage({ type: 'FILTER_TENANT', tenant: 'AHG-DEMO-MERCHANT' }, '*');
+        }
+      }
+
+      if (event.data?.type === 'RESIZE' && event.data.height) {
+        iframe.style.height = (event.data.height + 20) + 'px';
+        log(`Adjusted iframe height to ${event.data.height}px dynamically.`);
+      }
+
+      if (event.data?.type === 'DOC_SELECTED') {
+        log(`Document Selected: ${JSON.stringify(event.data.document)}`);
+        alert(`Host intercepted DOC_SELECTED: ${event.data.document.filename || event.data.document.documentType}`);
+      }
+    });
+  </script>
+</body>
+</html>
+

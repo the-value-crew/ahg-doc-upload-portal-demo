@@ -15,7 +15,7 @@ function Info() {
                         Encrypted & Compliance-Secured Underwriting
                     </h3>
                     <p className="text-xs text-[#4B5563] leading-relaxed">
-                        All uploads are encrypted with bank-grade 256-bit security directly to the AHG Pay underwriting vault. 95%+ client retention rate with zero long-term contracts.
+                        All uploads are encrypted with bank-grade 256-bit security directly to the AHG Pay underwriting vault.
                     </p>
                 </div>
             </div>

@@ -1,0 +1,10 @@
+JWT_SECRET=super-secret-local-jwt-signing-key-for-dev-only
+DOWNLOAD_SIGNING_SECRET=ahg-download-secret-local-dev-389172
+SYNC_TOKEN_SALT=ahg-sync-token-salt-local-dev-918273
+GHL_PRIVATE_TOKEN=your-ghl-private-token
+GHL_LOCATION_ID=your-ghl-location-id
+AZURE_TENANT_ID=your-azure-tenant-id
+AZURE_CLIENT_ID=your-azure-client-id
+AZURE_CLIENT_SECRET=your-azure-client-secret
+SHAREPOINT_URL=https://yourcompany.sharepoint.com/sites/your-site
+

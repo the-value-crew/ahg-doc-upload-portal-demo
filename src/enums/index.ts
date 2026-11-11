@@ -1,25 +1,29 @@
 export enum FileStatus {
-    REQUIRED = 1,
-    PENDING = 2,
-    CONFIRMED = 3,
+    NOT_UPLOADED = 'not-uploaded',
+    PENDING = 1,
+    VERIFIED = 2,
+    REJECTED = 3,
+    // Backward compatibility aliases
+    REQUIRED = 'not-uploaded',
+    CONFIRMED = 2,
 }
 
-// 5-step Underwriting Pipeline
+// 5-step Underwriting Pipeline updated to match operational onboarding flow
 export enum UserStatus {
-    APPLICATION_SUBMITTED = 1,
-    DOCS_SUBMITTED = 2,
-    UNDERWRITING_REVIEW = 3,
+    ONBOARDING_BOOKED = 1,
+    DOC_COLLECTION = 2,
+    APPLICATION_IN_REVIEW = 3,
+    APPROVED = 4,
+    LIVE_AND_PROCESSING = 5,
+    // Backward compatibility aliases
+    ONBOARDING_CALL_COMPLETED = 1,
+    DOCS_SUBMITTED_REVIEWED = 2,
+    APPLICATION_SUBMITTED = 3,
     GATEWAY_SETUP = 4,
     ACCOUNT_LIVE = 5
 }
 
 export enum DropzoneMode { SMALL, LARGE }
-
-export enum IndustryType {
-    HEMP = "hemp",
-    PEPTIDE = "peptide",
-    GENERAL = "general"
-}
 
 // Industry-Specific Document Types
 export enum FileTypes {

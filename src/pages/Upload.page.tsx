@@ -1,224 +1,128 @@
-import { useEffect, useState } from "react"
-import DefaultLayout from "../layouts/default.layout"
-import Dropzone from "../components/Dropzone"
-import UploadTable from "../components/UploadTable/UploadTable"
-import { DropzoneMode, FileStatus, IndustryType } from "../enums"
-import AppIntro from "../components/AppIntro/AppIntro"
-import UploadInfo from "../components/UploadTable/UploadInfo"
-import StatusPieChart from "../components/StatusPieChart"
-import { StatsData, UploadTableData } from "../interfaces"
-import { useNavigate, useSearchParams } from "react-router-dom"
-import { verifyUid, getUserFiles } from "../helpers/api.helper"
-import { getSectionsByIndustry, getFileTypesByIndustry } from "../helpers/file.helper"
-import UploadPageSkeleton from "../components/UploadPageSkeleton"
-import { UserStatus } from "../enums"
-import UserStatusStepper from "../components/UserStatusStepper"
-import BossWidget from "../components/BossWidget"
+import DefaultLayout from '../layouts/default.layout'
+import Dropzone from '../components/Dropzone'
+import UploadTable from '../components/UploadTable/UploadTable'
+import { DropzoneMode, UserStatus } from '../enums'
+import AppIntro from '../components/AppIntro/AppIntro'
+import UploadInfo from '../components/UploadTable/UploadInfo'
+import StatusPieChart from '../components/StatusPieChart'
+import UploadPageSkeleton from '../components/UploadPageSkeleton'
+import UserStatusStepper from '../components/UserStatusStepper'
+import ContactBanner from '../components/ContactBanner'
+import { usePortalData } from '../hooks/usePortalData'
+import NotFoundPage from './NotFound.page'
 
 function UploadPage() {
-  const [searchParams, setSearchParams] = useSearchParams()
-  const navigate = useNavigate()
+  const searchParams = new URLSearchParams(window.location.search)
+  const merchantId = searchParams.get('merchant')
 
-  // Industry workflow selection from URL query or state
-  const industryParam = (searchParams.get("industry") as IndustryType) || IndustryType.PEPTIDE
-  const [industry, setIndustry] = useState<IndustryType>(
-    Object.values(IndustryType).includes(industryParam) ? industryParam : IndustryType.PEPTIDE
-  )
+  const { config, checklist, stats, merchantStatus, loading, isSyncingGhl, error, is404, refresh, reload } =
+    usePortalData(merchantId)
 
-  const [loading, setLoading] = useState<boolean>(false)
-  const [statsData, setStatsData] = useState<StatsData>({
-    pending: 0,
-    confirmed: 0,
-    required: 0,
-  })
-  const [userStatus, setUserStatus] = useState<UserStatus>(
-    UserStatus.UNDERWRITING_REVIEW
-  )
-  const [fileList, setFileList] = useState<UploadTableData[]>([])
-
-  const handleIndustryChange = (newIndustry: IndustryType) => {
-    setIndustry(newIndustry)
-    const currentParams = new URLSearchParams(searchParams)
-    currentParams.set("industry", newIndustry)
-    setSearchParams(currentParams, { replace: true })
+  if (!merchantId || is404) {
+    return <NotFoundPage />
   }
 
-  const init = async (skipLoading = false, runUidVerification = true) => {
-    if (!skipLoading) setLoading(true)
-
-    // 1. verify uid
-    let uid = searchParams.get("uid") || "AHG-DEMO-MERCHANT"
-
-    if (runUidVerification && searchParams.get("uid")) {
-      const data = await verifyUid(uid)
-      if (data) {
-        setUserStatus(data.status)
-      } else {
-        navigate(`/404?uid=${uid}`)
-        return
-      }
-    }
-
-    // 2. fetch files
-    try {
-      const data = await getUserFiles()
-      const industryFileTypes = getFileTypesByIndustry(industry)
-
-      // calculate stats for the active industry
-      let stats = { required: 0, pending: 0, confirmed: 0 } as StatsData
-      let _fileList: UploadTableData[] = []
-
-      for (const ft of industryFileTypes) {
-        const file = data.find((d) => Number(d.type) === Number(ft))
-        if (file) {
-          if (file.status === FileStatus.PENDING) stats.pending++
-          else if (file.status === FileStatus.CONFIRMED) stats.confirmed++
-
-          _fileList.push({
-            fileType: Number(file.type),
-            status: Number(file.status),
-            filename: file.filename,
-            createdAt: file.createdAt,
-          })
-        } else {
-          stats.required++
-          _fileList.push({
-            fileType: Number(ft),
-            status: FileStatus.REQUIRED,
-          })
-        }
-      }
-
-      setStatsData(stats)
-      setFileList(_fileList)
-    } catch (e) {
-      console.error(e)
-    }
-
-    if (!skipLoading) setLoading(false)
+  if (error && !config) {
+    return (
+      <DefaultLayout>
+        <div className="container py-20 text-center max-w-lg mx-auto">
+          <div className="w-16 h-16 rounded-full bg-rose-50 text-rose-600 border border-rose-200 flex items-center justify-center mx-auto mb-4">
+            <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+            </svg>
+          </div>
+          <h2 className="text-xl font-bold text-gray-900 mb-2">Account Lookup Notice</h2>
+          <p className="text-sm text-gray-600 mb-6 leading-relaxed">{error}</p>
+          <button
+            onClick={reload}
+            className="px-6 py-2.5 bg-[#1A1A1A] hover:bg-black text-white font-bold rounded-xl text-sm transition-colors shadow-sm"
+          >
+            Retry Verification
+          </button>
+        </div>
+      </DefaultLayout>
+    )
   }
 
-  useEffect(() => {
-    ;(async () => await init())()
-  }, [industry])
+  if (loading || isSyncingGhl || !config) {
+    return (
+      <DefaultLayout>
+        <UploadPageSkeleton />
+      </DefaultLayout>
+    )
+  }
 
-  const handleFileUpload = () => setTimeout(() => init(true), 400)
-  const handleRefresh = () => init(true, false)
-
-  const activeSections = getSectionsByIndustry(industry)
-
-  const uploadUI = (
-    <div className="space-y-12 md:space-y-16">
-      {/* Industry Workflow Switcher Bar */}
-      <div className="bg-[#FFFFFF] border-b border-[#E5E7EB] py-3.5 shadow-xs sticky top-0 z-30">
-        <div className="container flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          <div className="flex items-center space-x-2">
-            <span className="text-xs font-bold uppercase tracking-wider text-[#4B5563]">
-              Industry Workflow:
-            </span>
-          </div>
-
-          <div className="flex items-center bg-[#F3F4F6] p-1 rounded-xl border border-[#E5E7EB] overflow-x-auto">
-            <button
-              onClick={() => handleIndustryChange(IndustryType.PEPTIDE)}
-              className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${
-                industry === IndustryType.PEPTIDE
-                  ? 'bg-white text-[#000000] shadow-xs border border-[#E5E7EB]'
-                  : 'text-[#6B7280] hover:text-[#1A1A1A]'
-              }`}
-            >
-              Peptide Industry
-            </button>
-
-            <button
-              onClick={() => handleIndustryChange(IndustryType.HEMP)}
-              className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${
-                industry === IndustryType.HEMP
-                  ? 'bg-white text-[#000000] shadow-xs border border-[#E5E7EB]'
-                  : 'text-[#6B7280] hover:text-[#1A1A1A]'
-              }`}
-            >
-              Hemp Industry
-            </button>
-
-            <button
-              onClick={() => handleIndustryChange(IndustryType.GENERAL)}
-              className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${
-                industry === IndustryType.GENERAL
-                  ? 'bg-white text-[#000000] shadow-xs border border-[#E5E7EB]'
-                  : 'text-[#6B7280] hover:text-[#1A1A1A]'
-              }`}
-            >
-              General High-Risk
-            </button>
-          </div>
-        </div>
-      </div>
-
-      {/* Hero Section with Status Pie Chart */}
-      <section className="container pt-4 md:pt-8">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-16 items-start">
-          <div className="lg:col-span-7">
-            <AppIntro industry={industry} />
-          </div>
-
-          <div className="lg:col-span-5 flex justify-center lg:justify-end">
-            <StatusPieChart stats={statsData} userStatus={userStatus} />
-          </div>
-        </div>
-
-        {/* Boss Widget integration */}
-        <BossWidget />
-
-        {/* Stepper Pipeline */}
-        <div className="mt-12">
-          <UserStatusStepper status={userStatus} />
-        </div>
-      </section>
-
-      {/* Quick Upload Dropzone Section */}
-      <section className="container">
-        <div className="mb-6">
-          <span className="text-xs font-bold uppercase tracking-wider text-[#4B5563] block mb-1">
-            Express Document Submission
-          </span>
-          <h2 className="text-2xl md:text-3xl font-black text-[#1A1A1A] uppercase tracking-tight">
-            Upload Underwriting Documents
-          </h2>
-        </div>
-
-        <Dropzone
-          mode={DropzoneMode.LARGE}
-          onFileUpload={handleFileUpload}
-          industry={industry}
-        />
-
-        <UploadInfo />
-      </section>
-
-      {/* Industry-Specific Document Tables Section */}
-      <section className="container pb-20">
-        <div className="space-y-12">
-          {activeSections.map((section) => (
-            <UploadTable
-              key={section.id}
-              sectionKey={section.id}
-              sectionTitle={section.title}
-              sectionDescription={section.description}
-              fileList={fileList}
-              fileTypes={section.fileTypes}
-              onFileUpload={handleFileUpload}
-              onRefresh={handleRefresh}
-              generic={false}
-            />
-          ))}
-        </div>
-      </section>
-    </div>
-  )
+  const sections = config.industry?.sections || []
 
   return (
-    <DefaultLayout>{loading ? <UploadPageSkeleton /> : uploadUI}</DefaultLayout>
+    <DefaultLayout branding={config.branding} supportContact={config.supportContact}>
+      <div className="space-y-10 md:space-y-14">
+        {/* Support Point of Contact Banner */}
+        <ContactBanner supportContact={config.supportContact} />
+
+        {/* Hero Section with Status Pie Chart */}
+        <section className="container pt-2 md:pt-4">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-16 items-start">
+            <div className="lg:col-span-7">
+              <AppIntro industryConfig={config.industry} />
+            </div>
+
+            <div className="lg:col-span-5 flex justify-center lg:justify-end">
+              <StatusPieChart stats={stats} userStatus={merchantStatus as UserStatus} stages={config.stages} />
+            </div>
+          </div>
+
+          {/* Stepper Pipeline */}
+          <div className="mt-12">
+            <UserStatusStepper status={merchantStatus} stages={config.stages} />
+          </div>
+        </section>
+
+        {/* Express Document Submission Dropzone Section */}
+        <section className="container">
+          <div className="mb-6">
+            <span className="text-xs font-bold uppercase tracking-wider text-gray-500 block mb-1">
+              Express Document Submission
+            </span>
+            <h2 className="text-2xl md:text-3xl font-black text-[#1A1A1A] uppercase tracking-tight">
+              {config.brand?.title || 'Upload Documents'}
+            </h2>
+          </div>
+
+          <Dropzone
+            mode={DropzoneMode.LARGE}
+            onFileUpload={refresh}
+            merchantId={merchantId}
+            checklist={checklist}
+            uploadRules={config.uploadRules}
+          />
+
+          <UploadInfo />
+        </section>
+
+        {/* Dynamic Industry-Specific Document Tables Section */}
+        <section className="container pb-20">
+          <div className="space-y-12">
+            {sections.map((section) => {
+              const sectionItems = checklist.filter((item) => item.sectionId === section.id)
+              return (
+                <UploadTable
+                  key={section.id}
+                  sectionTitle={section.title}
+                  sectionDescription={section.description}
+                  items={sectionItems}
+                  merchantId={merchantId}
+                  supportContact={config.supportContact}
+                  onFileUpload={refresh}
+                  onRefresh={refresh}
+                  adminMode={false}
+                />
+              )
+            })}
+          </div>
+        </section>
+      </div>
+    </DefaultLayout>
   )
 }
 

@@ -1,65 +1,76 @@
-import Info from "./Info"
-import { IndustryType } from "../../enums"
+import Info from './Info'
+import { getRequiredStatementMonths } from '../../helpers/statementPeriod.helper'
+import { IndustryConfig } from '../../../shared/types'
 
 interface AppIntroProps {
-  industry: IndustryType
+  industryConfig?: IndustryConfig
 }
 
-function AppIntro({ industry }: AppIntroProps) {
-  const getIndustryName = () => {
-    switch (industry) {
-      case IndustryType.PEPTIDE:
-        return "Peptide & Research Chemical Brands";
-      case IndustryType.HEMP:
-        return "Hemp & CBD Merchant Processing";
-      case IndustryType.GENERAL:
-      default:
-        return "High-Risk & B2B Merchant Brands";
-    }
-  };
+function AppIntro({ industryConfig }: AppIntroProps) {
+  const statementPeriod = getRequiredStatementMonths()
+
+  const industryName = industryConfig?.label || 'Merchant Onboarding'
+  const introText =
+    industryConfig?.intro ||
+    'Please submit the required core corporate records, financial statements, and industry-specific underwriting compliance items below.'
+  const licensingText =
+    industryConfig?.licensingNote ||
+    'State regulatory licenses, trade registrations, and applicable professional permits.'
 
   return (
     <>
       <div className="flex items-center space-x-2 mb-3">
         <span className="inline-block w-2.5 h-2.5 bg-[#02F1DE] rounded-full"></span>
-        <span className="uppercase text-xs font-bold tracking-widest text-[#4B5563]">
-          AHG Pay • {getIndustryName()}
+        <span className="uppercase text-xs font-bold tracking-widest text-gray-500">
+          {industryName}
         </span>
       </div>
 
       <h1 className="text-3xl md:text-5xl font-black text-[#1A1A1A] mb-4 tracking-tight uppercase">
-        Merchant <span className="text-[#02F1DE] relative inline-block">
+        Merchant{' '}
+        <span className="text-[#02F1DE] relative inline-block">
           Onboarding
           <span className="absolute bottom-1 left-0 w-full h-[6px] bg-[#02F1DE] -z-10 opacity-70"></span>
         </span>
       </h1>
 
-      <p className="text-base text-[#4B5563] leading-relaxed mb-6 font-normal">
-        Welcome to AHG Pay — the payments and growth partner for hemp, telehealth, peptides, and high-risk B2B brands.
-        Please submit the required core corporate records, financial statements, and industry-specific underwriting compliance items below.
+      <p className="text-base text-gray-600 leading-relaxed mb-6 font-normal">
+        {introText}
       </p>
 
       <Info />
 
-      <h2 className="text-xl font-bold text-[#1A1A1A] mb-3">
-        Workflow Overview
-      </h2>
-      <ul className="space-y-2 text-sm text-[#4B5563] mb-4">
+      <h2 className="text-xl font-bold text-[#1A1A1A] mb-3">Workflow Overview</h2>
+      <ul className="space-y-3 text-sm text-gray-600 mb-4">
         <li className="flex items-start">
           <span className="font-bold text-[#1A1A1A] mr-2">1.</span>
-          <span><strong>Core Entity Records:</strong> Articles of Incorporation, SS4/EIN Letter, Voided Check/Bank Letter, Owner IDs, and Operating Agreement/Bylaws.</span>
+          <span>
+            <strong className="text-[#1A1A1A]">Core Entity Records:</strong> Articles of Incorporation, SS4/EIN Letter,{' '}
+            <strong>Signed Bank Letter</strong> (or pre-printed voided check), Owner IDs, and Operating Agreement/Bylaws.
+          </span>
         </li>
         <li className="flex items-start">
           <span className="font-bold text-[#1A1A1A] mr-2">2.</span>
-          <span><strong>Financial History:</strong> 3 months business bank statements, 3 months processing statements{industry === IndustryType.PEPTIDE ? ', and 2 years financials' : ''}.</span>
+          <div>
+            <strong className="text-[#1A1A1A]">Financial History:</strong> 3 most recent consecutive months of business bank
+            statements and processing statements:
+            <span className="inline-block font-semibold text-[#065F46] bg-[#ECFDF5] border border-[#A7F3D0] px-2 py-0.5 rounded text-xs ml-1.5 my-1">
+              Required: {statementPeriod.formattedText}
+            </span>
+            {statementPeriod.rollOverNotice && (
+              <p className="text-xs text-amber-700 mt-1 italic">{statementPeriod.rollOverNotice}</p>
+            )}
+          </div>
         </li>
         <li className="flex items-start">
           <span className="font-bold text-[#1A1A1A] mr-2">3.</span>
-          <span><strong>{industry === IndustryType.PEPTIDE ? 'Peptide-Specific & Signature Docs' : industry === IndustryType.HEMP ? 'Hemp-Specific & Signature Docs' : 'Industry Verification'}:</strong> Specialized compliance certifications, fulfillment agreements, lab testing, and signed addenda.</span>
+          <span>
+            <strong className="text-[#1A1A1A]">Specific Licensing Related to the Industry:</strong> {licensingText}
+          </span>
         </li>
       </ul>
     </>
   )
 }
 
-export default AppIntro;
+export default AppIntro

@@ -1,1 +1,0 @@
-declare var DockLink: any;
