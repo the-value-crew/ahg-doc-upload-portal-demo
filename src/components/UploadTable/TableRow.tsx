@@ -207,7 +207,7 @@ function TableRow({
             <div>
               {!isUploaded || (isRejected && dropzoneVisibility) ? (
                 <div className="flex items-center gap-2 max-w-md">
-                  <div className="flex-1">
+                  <div className="flex-1 min-w-0">
                     <Dropzone
                       mode={DropzoneMode.SMALL}
                       onFileUpload={onFileUpload}
@@ -241,15 +241,17 @@ function TableRow({
                 <div className="flex items-center justify-between gap-3 text-xs text-gray-600 font-medium">
                   {dropzoneVisibility ? (
                     <div className="flex items-center gap-2 w-full max-w-xs">
-                      <Dropzone
-                        mode={DropzoneMode.SMALL}
-                        onFileUpload={() => {
-                          setDropzoneVisibility(false)
-                          onFileUpload()
-                        }}
-                        fileType={item.type as any}
-                        merchantId={merchantId}
-                      />
+                      <div className="flex-1 min-w-0">
+                        <Dropzone
+                          mode={DropzoneMode.SMALL}
+                          onFileUpload={() => {
+                            setDropzoneVisibility(false)
+                            onFileUpload()
+                          }}
+                          fileType={item.type as any}
+                          merchantId={merchantId}
+                        />
+                      </div>
                       <button
                         onClick={() => setDropzoneVisibility(false)}
                         className="w-7 h-7 flex items-center justify-center rounded-full text-gray-500 hover:text-black hover:bg-gray-100 transition-colors"
