@@ -1,6 +1,7 @@
 import { Env } from '../types'
 import { buildPortalPayload } from '../lib/portalPayload'
 import { generateSyncToken } from '../lib/syncToken'
+import { isValidMerchantId, syncMerchantFromGhl } from '../lib/ghl'
 
 export async function handlePortalConfig(request: Request, env: Env): Promise<Response> {
   const url = new URL(request.url)
@@ -14,8 +15,7 @@ export async function handlePortalConfig(request: Request, env: Env): Promise<Re
   }
 
   // Validate format (GHL opportunity ID: 20 alphanumeric chars)
-  const isValidFormat = /^[a-zA-Z0-9]{20}$/.test(merchantId)
-  if (!isValidFormat) {
+  if (!isValidMerchantId(merchantId)) {
     return new Response(JSON.stringify({ error: 'Invalid merchant identifier format' }), {
       status: 404,
       headers: { 'Content-Type': 'application/json' },
@@ -24,7 +24,7 @@ export async function handlePortalConfig(request: Request, env: Env): Promise<Re
 
   try {
     // 1. Check if merchant exists in D1
-    const payload = await buildPortalPayload(env, merchantId)
+    let payload = await buildPortalPayload(env, merchantId)
 
     if (payload) {
       // Found in database - return full portal payload
@@ -37,7 +37,38 @@ export async function handlePortalConfig(request: Request, env: Env): Promise<Re
       })
     }
 
-    // 2. Not found in database - generate short-lived signed sync token
+    // 2. Not found in D1 -> automatically sync from GHL if configured
+    if (env.GHL_PRIVATE_TOKEN) {
+      const syncRes = await syncMerchantFromGhl(env, merchantId)
+      if (syncRes.ok) {
+        payload = await buildPortalPayload(env, merchantId)
+        if (payload) {
+          return new Response(JSON.stringify(payload), {
+            status: 200,
+            headers: {
+              'Content-Type': 'application/json',
+              'Cache-Control': 'no-store',
+            },
+          })
+        }
+      } else if (syncRes.status === 404) {
+        return new Response(
+          JSON.stringify({
+            error: syncRes.error,
+            code: syncRes.code,
+          }),
+          {
+            status: 404,
+            headers: {
+              'Content-Type': 'application/json',
+              'Cache-Control': 'no-store',
+            },
+          }
+        )
+      }
+    }
+
+    // 3. Fallback: generate short-lived signed sync token for 2-step flow
     const salt = env.SYNC_TOKEN_SALT || env.DOWNLOAD_SIGNING_SECRET || 'dev-sync-token-salt'
     const syncToken = await generateSyncToken(merchantId, salt)
 

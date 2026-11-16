@@ -131,6 +131,7 @@ export default function AdminPage() {
   // Screen 2: Merchant Detail
   const [detailLoading, setDetailLoading] = useState<boolean>(false)
   const [detailData, setDetailData] = useState<any>(null)
+  const [detailError, setDetailError] = useState<string | null>(null)
 
   // Rejection Modal State
   const [rejectModalOpen, setRejectModalOpen] = useState<boolean>(false)
@@ -340,6 +341,7 @@ export default function AdminPage() {
   const loadMerchantDetail = useCallback(async () => {
     if (!token || !selectedMerchantId || currentView !== 'detail') return
     setDetailLoading(true)
+    setDetailError(null)
     try {
       const data = await fetchAdminMerchantDetail(token, selectedMerchantId)
       setDetailData(data)
@@ -348,6 +350,8 @@ export default function AdminPage() {
         handleLogout(true)
         return
       }
+      setDetailData(null)
+      setDetailError(err?.message || 'Merchant not found')
       toast.error('Failed to load merchant details: ' + err.message)
     } finally {
       setDetailLoading(false)
@@ -829,9 +833,31 @@ export default function AdminPage() {
             </div>
           </div>
 
-          {detailLoading || !detailData ? (
+          {detailLoading ? (
             <div className="p-16 text-center text-gray-400 bg-white rounded-xl border border-gray-200">
               Loading merchant underwriting records...
+            </div>
+          ) : detailError || !detailData ? (
+            <div className="p-12 text-center bg-white rounded-xl border border-gray-200 max-w-lg mx-auto">
+              <div className="w-12 h-12 rounded-full bg-rose-50 text-rose-600 border border-rose-200 flex items-center justify-center mx-auto mb-3">
+                <FiXCircle className="w-6 h-6" />
+              </div>
+              <h3 className="text-base font-bold text-gray-900 mb-1">Unable to Load Merchant</h3>
+              <p className="text-sm text-gray-600 mb-6">{detailError || 'Merchant not found'}</p>
+              <div className="flex items-center justify-center gap-3">
+                <button
+                  onClick={loadMerchantDetail}
+                  className="px-4 py-2 text-xs font-bold text-white bg-black hover:bg-gray-800 rounded-lg transition-colors"
+                >
+                  Retry
+                </button>
+                <button
+                  onClick={handleBackToMerchants}
+                  className="px-4 py-2 text-xs font-semibold text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
+                >
+                  Back to Merchants
+                </button>
+              </div>
             </div>
           ) : (
             <>

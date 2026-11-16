@@ -9,6 +9,7 @@ export interface Env {
   SYNC_TOKEN_SALT?: string
   GHL_PRIVATE_TOKEN?: string
   GHL_LOCATION_ID?: string
+  GHL_PIPELINE_ID?: string
   AZURE_TENANT_ID?: string
   AZURE_CLIENT_ID?: string
   AZURE_CLIENT_SECRET?: string

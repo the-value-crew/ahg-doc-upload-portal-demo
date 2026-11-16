@@ -1,5 +1,6 @@
 import { Env } from '../types'
 import { requireAdminAuth } from '../middleware/auth'
+import { ensureMerchantExists, isValidMerchantId } from '../lib/ghl'
 import { buildChecklist, computeStats } from '../../shared/checklist'
 import { AdminMerchantsResponse, ChecklistStats, FileStatus } from '../../shared/types'
 
@@ -70,6 +71,15 @@ export async function handleAdminGetMerchants(request: Request, env: Env): Promi
   const page = Math.max(1, parseInt(url.searchParams.get('page') || '1', 10))
   const perPage = Math.min(100, Math.max(1, parseInt(url.searchParams.get('perPage') || '10', 10)))
   const offset = (page - 1) * perPage
+
+  // 0. If searching directly by a 20-char GHL opportunity ID, ensure it is synced from GHL if missing in D1
+  if (q && isValidMerchantId(q)) {
+    try {
+      await ensureMerchantExists(env, q)
+    } catch (syncErr) {
+      console.error('Admin search GHL sync error:', syncErr)
+    }
+  }
 
   // 1. Build query filters
   const conditions: string[] = []
@@ -191,18 +201,14 @@ export async function handleAdminGetMerchantDetail(request: Request, env: Env, m
   const auth = await requireAdminAuth(request, env)
   if (auth instanceof Response) return auth
 
-  const merchant = await env.DB.prepare(
-    'SELECT id, name, industry, status, processor, created_at, updated_at FROM merchants WHERE id = ?'
-  )
-    .bind(merchantId)
-    .first<{ id: string; name: string; industry: string; status: number; processor: string | null; created_at: string; updated_at: string }>()
-
-  if (!merchant) {
-    return new Response(JSON.stringify({ error: 'Merchant not found' }), {
-      status: 404,
+  const ensured = await ensureMerchantExists(env, merchantId)
+  if (!ensured.ok) {
+    return new Response(JSON.stringify({ error: ensured.error, code: ensured.code }), {
+      status: ensured.status === 400 ? 404 : ensured.status,
       headers: { 'Content-Type': 'application/json' },
     })
   }
+  const merchant = ensured.merchant
 
   // Fetch configs
   const configRows = await env.DB.prepare(
@@ -218,7 +224,7 @@ export async function handleAdminGetMerchantDetail(request: Request, env: Env, m
     }
   }
 
-  const industryConfig = configs.industries?.[merchant.industry]
+  const industryConfig = configs.industries?.[merchant.industry] || configs.industries?.general
   if (!industryConfig) {
     return new Response(JSON.stringify({ error: `Industry config for '${merchant.industry}' not found` }), {
       status: 500,
@@ -289,12 +295,27 @@ export async function handleAdminUpdateMerchantStatus(request: Request, env: Env
   }
 
   const now = new Date().toISOString()
-  const result = await env.DB.prepare('UPDATE merchants SET status = ?, updated_at = ? WHERE id = ?')
+  let result = await env.DB.prepare('UPDATE merchants SET status = ?, updated_at = ? WHERE id = ?')
     .bind(status, now, merchantId)
     .run()
 
   if (!result.meta.changes) {
-    return new Response(JSON.stringify({ error: 'Merchant not found' }), { status: 404 })
+    const ensured = await ensureMerchantExists(env, merchantId)
+    if (!ensured.ok) {
+      return new Response(JSON.stringify({ error: ensured.error, code: ensured.code }), {
+        status: ensured.status === 400 ? 404 : ensured.status,
+        headers: { 'Content-Type': 'application/json' },
+      })
+    }
+    result = await env.DB.prepare('UPDATE merchants SET status = ?, updated_at = ? WHERE id = ?')
+      .bind(status, now, merchantId)
+      .run()
+    if (!result.meta.changes) {
+      return new Response(JSON.stringify({ error: 'Merchant not found' }), {
+        status: 404,
+        headers: { 'Content-Type': 'application/json' },
+      })
+    }
   }
 
   return new Response(JSON.stringify({ success: true, merchantId, status, updatedAt: now }), {
@@ -339,11 +360,15 @@ export async function handleAdminUpdateStatus(request: Request, env: Env): Promi
   const now = new Date().toISOString()
   const finalNote = statusNum === 3 ? note.trim() : null
 
-  // 1. Verify merchant exists
-  const merchant = await env.DB.prepare('SELECT id, industry FROM merchants WHERE id = ?').bind(merchantId).first<{ id: string; industry: string }>()
-  if (!merchant) {
-    return new Response(JSON.stringify({ error: 'Merchant not found' }), { status: 404 })
+  // 1. Verify merchant exists (auto-sync from GHL if missing in D1)
+  const ensured = await ensureMerchantExists(env, merchantId)
+  if (!ensured.ok) {
+    return new Response(JSON.stringify({ error: ensured.error, code: ensured.code }), {
+      status: ensured.status === 400 ? 404 : ensured.status,
+      headers: { 'Content-Type': 'application/json' },
+    })
   }
+  const merchant = ensured.merchant
 
   // 2. Upsert document status in D1
   await env.DB.prepare(
@@ -364,7 +389,7 @@ export async function handleAdminUpdateStatus(request: Request, env: Env): Promi
 
   if (configRow?.value) {
     const industries = JSON.parse(configRow.value)
-    const indConfig = industries[merchant.industry]
+    const indConfig = industries[merchant.industry] || industries.general
     const docRows = await env.DB.prepare('SELECT document_type, status, note, uploaded_at, filename FROM documents WHERE merchant_id = ?')
       .bind(merchantId)
       .all()

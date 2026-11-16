@@ -1,5 +1,6 @@
 import { Env } from '../types'
 import { uploadToSharepoint } from '../lib/sharepoint'
+import { ensureMerchantExists } from '../lib/ghl'
 
 export async function handleUpload(request: Request, env: Env): Promise<Response> {
   let formData: FormData
@@ -31,17 +32,15 @@ export async function handleUpload(request: Request, env: Env): Promise<Response
     })
   }
 
-  // 1. Verify merchant exists
-  const merchant = await env.DB.prepare('SELECT id, name, industry FROM merchants WHERE id = ?')
-    .bind(merchantId)
-    .first<{ id: string; name: string; industry: string }>()
-
-  if (!merchant) {
-    return new Response(JSON.stringify({ error: 'Merchant not found' }), {
-      status: 404,
+  // 1. Verify merchant exists (auto-sync from GHL if missing in D1)
+  const ensured = await ensureMerchantExists(env, merchantId)
+  if (!ensured.ok) {
+    return new Response(JSON.stringify({ error: ensured.error, code: ensured.code }), {
+      status: ensured.status === 400 ? 404 : ensured.status,
       headers: { 'Content-Type': 'application/json' },
     })
   }
+  const merchant = ensured.merchant
 
   // 2. Fetch upload rules and industry template from DB
   const configRows = await env.DB.prepare(
@@ -70,7 +69,7 @@ export async function handleUpload(request: Request, env: Env): Promise<Response
   }
 
   // Validate documentType is defined in the merchant's industry template
-  const indConfig = industries?.[merchant.industry]
+  const indConfig = industries?.[merchant.industry] || industries?.general
   if (indConfig && Array.isArray(indConfig.sections)) {
     const validTypes: number[] = []
     for (const sec of indConfig.sections) {
