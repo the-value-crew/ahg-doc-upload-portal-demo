@@ -40,8 +40,71 @@ export const MERCHANT_STATUS_LABELS: Record<number, string> = {
   5: 'Live and processing',
 }
 
+const TRUSTED_EMBED_ORIGINS = ['https://ahg-onboarding-hub.ahg-hub.workers.dev']
+
+function normalizeOrigin(raw?: string | null): string | null {
+  if (!raw || typeof raw !== 'string') return null
+  const trimmed = raw.trim()
+  if (!trimmed) return null
+  try {
+    const parsed = new URL(trimmed)
+    if (parsed.protocol !== 'https:' && parsed.protocol !== 'http:') return null
+    return parsed.origin
+  } catch {
+    return null
+  }
+}
+
+function getTrustedEmbedOrigin(): string | null {
+  const candidates: string[] = []
+
+  try {
+    const ancestors = window.location.ancestorOrigins
+    if (ancestors) {
+      for (let i = 0; i < ancestors.length; i++) {
+        candidates.push(ancestors[i])
+      }
+    }
+  } catch {
+    // ignore
+  }
+
+  try {
+    if (document.referrer) {
+      candidates.push(document.referrer)
+    }
+  } catch {
+    // ignore
+  }
+
+  try {
+    candidates.push(window.location.origin)
+  } catch {
+    // ignore
+  }
+
+  for (const candidate of candidates) {
+    const normalized = normalizeOrigin(candidate)
+    if (normalized && TRUSTED_EMBED_ORIGINS.includes(normalized)) {
+      return normalized
+    }
+  }
+
+  return null
+}
+
 export default function AdminPage() {
+  const [trustedEmbedOrigin, setTrustedEmbedOrigin] = useState<string | null>(() => getTrustedEmbedOrigin())
   const [token, setToken] = useState<string | null>(() => {
+    const injectedToken = (window as any).__AHG_ADMIN_TOKEN__
+    if (typeof injectedToken === 'string' && injectedToken) {
+      try {
+        localStorage.setItem('ahg_admin_token', injectedToken)
+      } catch {
+        // ignore storage errors in cross-origin iframes
+      }
+      return injectedToken
+    }
     try {
       return localStorage.getItem('ahg_admin_token')
     } catch {
@@ -83,6 +146,11 @@ export default function AdminPage() {
     }
 
     const handleMessage = (event: MessageEvent) => {
+      const origin = normalizeOrigin(event.origin)
+      if (origin && TRUSTED_EMBED_ORIGINS.includes(origin)) {
+        setTrustedEmbedOrigin(origin)
+      }
+
       const data = event.data as HostToIframeMessage
       if (!data || typeof data !== 'object') return
 
@@ -130,17 +198,53 @@ export default function AdminPage() {
   }, [currentView, merchants, detailData, token])
 
   // 3. Admin Authentication Handlers (Login & Persistent Logout)
-  const handleLogout = useCallback(() => {
-    setToken(null)
-    setPassword('')
+  const handleLogout = useCallback(
+    (isSessionExpired = false) => {
+      setToken(null)
+      setPassword('')
+      setLoginError(null)
+      try {
+        localStorage.removeItem('ahg_admin_token')
+      } catch {
+        // ignore
+      }
+      if (!trustedEmbedOrigin) {
+        if (isSessionExpired === true) {
+          toast.error('Session expired. Please sign in again.')
+        } else {
+          toast.info('Logged out successfully')
+        }
+      }
+    },
+    [trustedEmbedOrigin]
+  )
+
+  // Auto-authenticate without password when rendered inside trusted parent origin
+  useEffect(() => {
+    if (token || !trustedEmbedOrigin) return
+
+    let cancelled = false
     setLoginError(null)
-    try {
-      localStorage.removeItem('ahg_admin_token')
-    } catch {
-      // ignore
+
+    adminLogin('', trustedEmbedOrigin)
+      .then((res) => {
+        if (cancelled) return
+        setToken(res.token)
+        try {
+          localStorage.setItem('ahg_admin_token', res.token)
+        } catch {
+          // ignore
+        }
+      })
+      .catch((err: any) => {
+        if (cancelled) return
+        setLoginError(err?.message || 'Automatic login failed')
+      })
+
+    return () => {
+      cancelled = true
     }
-    toast.info('Logged out successfully')
-  }, [])
+  }, [token, trustedEmbedOrigin])
 
   const handlePasswordSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -169,8 +273,7 @@ export default function AdminPage() {
       setTotalPages(res.pagination.totalPages)
     } catch (err: any) {
       if (err.message && (err.message.includes('401') || err.message.includes('Unauthorized'))) {
-        handleLogout()
-        toast.error('Session expired. Please sign in again.')
+        handleLogout(true)
         return
       }
       toast.error('Failed to load merchants: ' + err.message)
@@ -242,8 +345,7 @@ export default function AdminPage() {
       setDetailData(data)
     } catch (err: any) {
       if (err.message && (err.message.includes('401') || err.message.includes('Unauthorized'))) {
-        handleLogout()
-        toast.error('Session expired. Please sign in again.')
+        handleLogout(true)
         return
       }
       toast.error('Failed to load merchant details: ' + err.message)
@@ -403,6 +505,17 @@ export default function AdminPage() {
 
   // Login view
   if (!token) {
+    if (trustedEmbedOrigin && !loginError) {
+      return (
+        <div ref={containerRef} className="min-h-screen bg-gray-50 flex items-center justify-center p-4 font-sans">
+          <ToastContainer position="top-right" autoClose={3000} />
+          <div className="p-8 text-center text-sm text-gray-500 bg-white rounded-2xl shadow-sm border border-gray-200">
+            Loading merchant portfolio...
+          </div>
+        </div>
+      )
+    }
+
     return (
       <div ref={containerRef} className="min-h-screen bg-gray-50 flex items-center justify-center p-4 font-sans">
         <ToastContainer position="top-right" autoClose={3000} />
@@ -503,14 +616,16 @@ export default function AdminPage() {
                 <span className="hidden sm:inline">Refresh</span>
               </button>
 
-              <button
-                onClick={handleLogout}
-                className="flex items-center gap-1.5 px-3.5 py-2 text-sm font-medium bg-white hover:bg-rose-50 text-rose-600 hover:text-rose-700 border border-gray-300 hover:border-rose-300 rounded-lg transition-colors shrink-0 shadow-2xs"
-                title="Log Out of Admin Portal"
-              >
-                <FiLogOut className="text-sm" />
-                <span className="hidden sm:inline">Log out</span>
-              </button>
+              {!trustedEmbedOrigin && (
+                <button
+                  onClick={() => handleLogout(false)}
+                  className="flex items-center gap-1.5 px-3.5 py-2 text-sm font-medium bg-white hover:bg-rose-50 text-rose-600 hover:text-rose-700 border border-gray-300 hover:border-rose-300 rounded-lg transition-colors shrink-0 shadow-2xs"
+                  title="Log Out of Admin Portal"
+                >
+                  <FiLogOut className="text-sm" />
+                  <span className="hidden sm:inline">Log out</span>
+                </button>
+              )}
             </div>
           </div>
 
@@ -701,14 +816,16 @@ export default function AdminPage() {
                 <FiExternalLink className="text-gray-500" />
               </a>
 
-              <button
-                onClick={handleLogout}
-                className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold bg-white hover:bg-rose-50 text-rose-600 hover:text-rose-700 border border-gray-300 hover:border-rose-300 rounded-lg transition-colors shadow-2xs"
-                title="Log Out of Admin Portal"
-              >
-                <FiLogOut className="text-xs" />
-                <span className="hidden sm:inline">Log out</span>
-              </button>
+              {!trustedEmbedOrigin && (
+                <button
+                  onClick={() => handleLogout(false)}
+                  className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold bg-white hover:bg-rose-50 text-rose-600 hover:text-rose-700 border border-gray-300 hover:border-rose-300 rounded-lg transition-colors shadow-2xs"
+                  title="Log Out of Admin Portal"
+                >
+                  <FiLogOut className="text-xs" />
+                  <span className="hidden sm:inline">Log out</span>
+                </button>
+              )}
             </div>
           </div>
 

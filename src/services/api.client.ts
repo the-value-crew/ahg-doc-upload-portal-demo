@@ -87,11 +87,14 @@ export function uploadDocumentFile(
   })
 }
 
-export async function adminLogin(password: string): Promise<{ token: string; expiresIn: number }> {
+export async function adminLogin(
+  password: string,
+  hostOrigin?: string
+): Promise<{ token: string; expiresIn: number }> {
   const res = await fetch('/api/admin/login', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ password }),
+    body: JSON.stringify({ password, hostOrigin }),
   })
   if (!res.ok) {
     const err = await res.json().catch(() => ({}))

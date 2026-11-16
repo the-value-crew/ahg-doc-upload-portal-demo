@@ -28,7 +28,7 @@
     }
   ],
   "vars": {
-    "ALLOWED_PARENT_ORIGINS": "http://localhost:3000 http://localhost:5173 https://app.example.com",
+    "ALLOWED_PARENT_ORIGINS": "*",
     "MAX_UPLOAD_BYTES": "26214400"
   },
   "observability": {
