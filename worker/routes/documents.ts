@@ -107,12 +107,12 @@ export async function handleAdminGetMerchants(request: Request, env: Env): Promi
   const total = countRow?.total || 0
   const totalPages = Math.ceil(total / perPage) || 1
 
-  // 3. Fetch paginated merchants
+  // 3. Fetch paginated merchants (newly added first)
   const merchantsRes = await env.DB.prepare(
     `SELECT id, name, industry, status, processor, created_at, updated_at
      FROM merchants
      ${whereClause}
-     ORDER BY name ASC
+     ORDER BY datetime(created_at) DESC, created_at DESC, name ASC
      LIMIT ? OFFSET ?`
   )
     .bind(...params, perPage, offset)
