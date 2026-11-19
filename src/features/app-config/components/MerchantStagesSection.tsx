@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { FiLayers, FiPlus, FiX } from 'react-icons/fi'
+import { FiLayers, FiPlus, FiX, FiTrash2 } from 'react-icons/fi'
 import { MerchantStageConfig } from '../../../types/appConfig'
 import { SectionHeading, FieldLabel, CurrentPreview } from './common'
 import UserStatusStepper from '../../../components/UserStatusStepper'
@@ -9,6 +9,8 @@ interface MerchantStagesSectionProps {
   onUpdateStageName: (index: number, name: string) => void
   onAddAlias: (stageIndex: number, alias: string) => void
   onRemoveAlias: (stageIndex: number, aliasIndex: number) => void
+  onAddStage: (name: string) => void
+  onDeleteStage?: (stageIndex: number) => void
 }
 
 export function MerchantStagesSection({
@@ -16,14 +18,24 @@ export function MerchantStagesSection({
   onUpdateStageName,
   onAddAlias,
   onRemoveAlias,
+  onAddStage,
+  onDeleteStage,
 }: MerchantStagesSectionProps) {
   const [newAliasInputs, setNewAliasInputs] = useState<Record<number, string>>({})
+  const [newStageName, setNewStageName] = useState<string>('')
 
   const handleAddAlias = (stageIndex: number) => {
     const val = (newAliasInputs[stageIndex] || '').trim()
     if (!val) return
     onAddAlias(stageIndex, val)
     setNewAliasInputs((prev) => ({ ...prev, [stageIndex]: '' }))
+  }
+
+  const handleAddStage = () => {
+    const trimmed = newStageName.trim()
+    if (!trimmed) return
+    onAddStage(trimmed)
+    setNewStageName('')
   }
 
   return (
@@ -36,7 +48,11 @@ export function MerchantStagesSection({
 
       {/* Live Preview */}
       <CurrentPreview title="Live Pipeline Progression Stepper (Preview at Stage 3)">
-        <UserStatusStepper status={3} stages={stages} />
+        <div className="w-full overflow-x-auto py-1">
+          <div className="min-w-[480px]">
+            <UserStatusStepper status={3} stages={stages} />
+          </div>
+        </div>
       </CurrentPreview>
 
       {/* Stages Editor List */}
@@ -48,7 +64,7 @@ export function MerchantStagesSection({
               key={stage.value}
               className="p-4 md:p-5 rounded-xl border border-gray-200 bg-gray-50/50 hover:bg-white hover:border-gray-300 transition-all space-y-3"
             >
-              <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                 <div className="flex items-center gap-2.5 shrink-0">
                   <span className="w-7 h-7 rounded-full bg-black text-white text-xs font-bold flex items-center justify-center">
                     {stage.value}
@@ -68,15 +84,23 @@ export function MerchantStagesSection({
                     className="w-full px-3 py-1.5 bg-white border border-gray-300 rounded-lg text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-teal-500 font-medium"
                   />
                 </div>
+
+                {onDeleteStage && stages.length > 1 && (
+                  <button
+                    type="button"
+                    onClick={() => onDeleteStage(sIdx)}
+                    className="self-end sm:self-center p-2 text-gray-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors"
+                    title={`Delete Stage ${stage.value}`}
+                  >
+                    <FiTrash2 className="w-4 h-4" />
+                  </button>
+                )}
               </div>
 
               {/* Aliases */}
               <div className="pt-2 border-t border-gray-200/70">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-2">
+                <div className="mb-2">
                   <FieldLabel>GoHighLevel Pipeline Aliases & Stage UUIDs</FieldLabel>
-                  <span className="text-[11px] text-gray-400">
-                    Matches incoming CRM webhooks and opportunity stages
-                  </span>
                 </div>
 
                 <div className="flex flex-wrap items-center gap-2">
@@ -128,6 +152,43 @@ export function MerchantStagesSection({
             </div>
           )
         })}
+
+        {/* Add New Stage Card */}
+        <div className="p-4 md:p-5 rounded-xl border border-dashed border-gray-300 bg-gray-50/70 hover:bg-white hover:border-gray-400 transition-all space-y-3">
+          <div className="flex items-center gap-2">
+            <span className="w-7 h-7 rounded-full bg-teal-600 text-white text-xs font-bold flex items-center justify-center">
+              +
+            </span>
+            <span className="text-xs font-bold text-gray-700 uppercase tracking-wider">
+              Add New Underwriting Stage (Stage {stages.length + 1})
+            </span>
+          </div>
+
+          <div className="flex flex-col sm:flex-row items-center gap-2.5">
+            <input
+              type="text"
+              placeholder="Enter stage name (e.g. Compliance Verification)..."
+              value={newStageName}
+              onChange={(e) => setNewStageName(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  e.preventDefault()
+                  handleAddStage()
+                }
+              }}
+              className="w-full flex-1 px-3 py-2 bg-white border border-gray-300 rounded-lg text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-teal-500 font-medium"
+            />
+            <button
+              type="button"
+              disabled={!newStageName.trim()}
+              onClick={handleAddStage}
+              className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 px-4 py-2 bg-black hover:bg-gray-800 disabled:opacity-40 disabled:cursor-not-allowed text-white text-xs font-bold rounded-lg transition-colors shadow-2xs shrink-0"
+            >
+              <FiPlus className="w-3.5 h-3.5" />
+              <span>Add Stage</span>
+            </button>
+          </div>
+        </div>
       </div>
     </div>
   )

@@ -14,7 +14,8 @@ import {
 } from 'react-icons/fi'
 import { toast } from 'react-toastify'
 import { AppConfigState } from '../../types/appConfig'
-import { getAppConfig, saveAppConfig, resetAppConfig } from '../../services/appConfig.service'
+import { DEFAULT_APP_CONFIG } from '../../config/appConfig'
+import { fetchAppConfig, saveAppConfig, resetAppConfig } from '../../services/appConfig.service'
 import { MerchantStagesSection } from './components/MerchantStagesSection'
 import { IndustriesSection } from './components/IndustriesSection'
 import { BrandingSection } from './components/BrandingSection'
@@ -24,29 +25,51 @@ import { ProcessorsGhlSection } from './components/ProcessorsGhlSection'
 
 interface AppConfigDashboardProps {
   onBack: () => void
+  adminToken?: string | null
 }
 
 type TabType = 'all' | 'stages' | 'industries' | 'branding' | 'support' | 'rules' | 'processors'
 
-export function AppConfigDashboard({ onBack }: AppConfigDashboardProps) {
+export function AppConfigDashboard({ onBack, adminToken }: AppConfigDashboardProps) {
   const [loading, setLoading] = useState<boolean>(true)
+  const [loadError, setLoadError] = useState<string | null>(null)
   const [saving, setSaving] = useState<boolean>(false)
   const [isSaved, setIsSaved] = useState<boolean>(false)
   const [activeTab, setActiveTab] = useState<TabType>('all')
 
-  const [config, setConfig] = useState<AppConfigState>(() => getAppConfig())
+  const [config, setConfig] = useState<AppConfigState>(DEFAULT_APP_CONFIG)
   const [initialSnapshot, setInitialSnapshot] = useState<string>('')
 
-  // Load configuration on mount
+  // Load configuration straight from backend on mount
   useEffect(() => {
-    try {
-      const active = getAppConfig()
-      setConfig(active)
-      setInitialSnapshot(JSON.stringify(active))
-    } finally {
-      setLoading(false)
+    let mounted = true
+    setLoading(true)
+    setLoadError(null)
+
+    fetchAppConfig(adminToken)
+      .then((data) => {
+        if (mounted) {
+          setConfig(data)
+          setInitialSnapshot(JSON.stringify(data))
+        }
+      })
+      .catch((err: any) => {
+        if (mounted) {
+          const msg = err?.message || 'Failed to load application configuration from server'
+          setLoadError(msg)
+          toast.error(msg)
+        }
+      })
+      .finally(() => {
+        if (mounted) {
+          setLoading(false)
+        }
+      })
+
+    return () => {
+      mounted = false
     }
-  }, [])
+  }, [adminToken])
 
   // Dirty state tracking
   const currentSnapshot = useMemo(() => {
@@ -58,11 +81,11 @@ export function AppConfigDashboard({ onBack }: AppConfigDashboardProps) {
   const handleSave = async () => {
     setSaving(true)
     try {
-      const res = await saveAppConfig(config)
+      const res = await saveAppConfig(config, adminToken)
       if (res.success) {
         setInitialSnapshot(currentSnapshot)
         setIsSaved(true)
-        toast.success('App configuration saved and active')
+        toast.success('App configuration saved to database')
       } else {
         toast.error(res.error || 'Failed to save configuration')
       }
@@ -74,26 +97,54 @@ export function AppConfigDashboard({ onBack }: AppConfigDashboardProps) {
   }
 
   const handleReset = async () => {
-    if (window.confirm('Reset all configuration values to the original 0003_seed_app_config defaults?')) {
-      setLoading(true)
+    if (window.confirm('Reset all configuration values on the database to 0003 seed migration defaults?')) {
+      setSaving(true)
       try {
-        const resetDefaults = await resetAppConfig()
+        const resetDefaults = await resetAppConfig(adminToken)
         setConfig(resetDefaults)
         setInitialSnapshot(JSON.stringify(resetDefaults))
-        setIsSaved(false)
-        toast.info('App configuration reset to migration defaults')
+        setIsSaved(true)
+        toast.info('App configuration reset to migration defaults on database')
       } catch (err: any) {
         toast.error(err?.message || 'Failed to reset configuration')
       } finally {
-        setLoading(false)
+        setSaving(false)
       }
     }
   }
 
   if (loading) {
     return (
-      <div className="max-w-7xl mx-auto p-16 text-center text-gray-400 bg-white rounded-xl border border-gray-200">
-        Loading application configuration...
+      <div className="max-w-7xl mx-auto p-16 flex flex-col items-center justify-center gap-3 bg-white rounded-2xl border border-gray-200 shadow-2xs">
+        <FiRefreshCw className="w-6 h-6 text-teal-600 animate-spin" />
+        <p className="text-sm font-semibold text-gray-700">Loading configuration from server...</p>
+      </div>
+    )
+  }
+
+  if (loadError && !initialSnapshot) {
+    return (
+      <div className="max-w-7xl mx-auto p-12 flex flex-col items-center justify-center gap-4 bg-white rounded-2xl border border-gray-200 shadow-2xs text-center">
+        <div className="p-4 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-sm max-w-md">
+          <p className="font-bold">Failed to load configuration</p>
+          <p className="mt-1 text-xs text-rose-600">{loadError}</p>
+        </div>
+        <div className="flex items-center gap-3">
+          <button
+            type="button"
+            onClick={onBack}
+            className="px-4 py-2 bg-white border border-gray-300 rounded-lg text-xs font-semibold text-gray-700 hover:bg-gray-50 transition-colors"
+          >
+            Back to Merchants
+          </button>
+          <button
+            type="button"
+            onClick={() => window.location.reload()}
+            className="px-4 py-2 bg-black text-white rounded-lg text-xs font-semibold hover:bg-gray-800 transition-colors"
+          >
+            Retry
+          </button>
+        </div>
       </div>
     )
   }
@@ -120,7 +171,7 @@ export function AppConfigDashboard({ onBack }: AppConfigDashboardProps) {
             </h1>
           </div>
           <p className="mt-1 text-xs sm:text-sm text-gray-500 max-w-2xl">
-            Manage merchant underwriting stages, document requirements, portal branding, and GoHighLevel CRM mappings without database migrations.
+            Manage merchant underwriting stages, document requirements, portal branding, and GoHighLevel CRM mappings.
           </p>
         </div>
 
@@ -241,6 +292,40 @@ export function AppConfigDashboard({ onBack }: AppConfigDashboardProps) {
               updated[sIdx] = { ...updated[sIdx], aliases: currentAliases }
               setConfig({ ...config, merchant_stages: updated })
             }}
+            onAddStage={(name) => {
+              const nextVal =
+                config.merchant_stages.length > 0
+                  ? Math.max(...config.merchant_stages.map((s) => s.value)) + 1
+                  : 1
+              const newStage = {
+                value: nextVal,
+                name: name.trim(),
+                aliases: [`stage_${nextVal}`, name.trim().toLowerCase()],
+              }
+              setConfig({
+                ...config,
+                merchant_stages: [...config.merchant_stages, newStage],
+              })
+              toast.info(`Added stage "${name}"`)
+            }}
+            onDeleteStage={(idx) => {
+              if (config.merchant_stages.length <= 1) {
+                toast.warning('At least one stage is required')
+                return
+              }
+              const stageName = config.merchant_stages[idx].name
+              const updated = config.merchant_stages
+                .filter((_, i) => i !== idx)
+                .map((stage, i) => ({
+                  ...stage,
+                  value: i + 1,
+                }))
+              setConfig({
+                ...config,
+                merchant_stages: updated,
+              })
+              toast.info(`Removed stage "${stageName}"`)
+            }}
           />
         )}
 
@@ -341,12 +426,10 @@ export function AppConfigDashboard({ onBack }: AppConfigDashboardProps) {
       {/* Footer Save & Changes summary */}
       <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-6 border-t border-gray-200">
         <div className="text-xs text-gray-500">
-          {hasChanges ? (
+          {hasChanges && (
             <span className="text-amber-600 font-semibold">
               You have unsaved changes in this session. Don't forget to save.
             </span>
-          ) : (
-            <span>All configuration settings are synchronized with local storage.</span>
           )}
         </div>
 

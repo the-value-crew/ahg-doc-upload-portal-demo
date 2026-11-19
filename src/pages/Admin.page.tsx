@@ -33,9 +33,6 @@ import {
   FiSliders,
   FiSettings,
 } from 'react-icons/fi'
-import { MOCK_MERCHANTS } from '../config/appConfig'
-import { getAppConfig } from '../services/appConfig.service'
-import { buildChecklist, computeStats } from '../../shared/checklist'
 import { AppConfigDashboard } from '../features/app-config/AppConfigDashboard'
 
 export const MERCHANT_STATUS_LABELS: Record<number, string> = {
@@ -112,13 +109,10 @@ export default function AdminPage() {
       return injectedToken
     }
     try {
-      const stored = localStorage.getItem('ahg_admin_token')
-      if (stored) return stored
+      return localStorage.getItem('ahg_admin_token')
     } catch {
-      // ignore
+      return null
     }
-    // Temporary override: bypass admin login flow and go straight to dashboard
-    return 'demo-admin-override'
   })
   const [password, setPassword] = useState<string>('')
   const [loginError, setLoginError] = useState<string | null>(null)
@@ -286,29 +280,7 @@ export default function AdminPage() {
         handleLogout(true)
         return
       }
-      // Demo fallback when proper backend is unavailable
-      let filtered = [...MOCK_MERCHANTS]
-      if (searchQuery.trim()) {
-        const q = searchQuery.toLowerCase().trim()
-        filtered = filtered.filter(
-          (m) =>
-            m.name.toLowerCase().includes(q) ||
-            m.id.toLowerCase().includes(q) ||
-            (m.processor && m.processor.toLowerCase().includes(q))
-        )
-      }
-      if (statusFilter !== 'ALL') {
-        const sf = parseInt(statusFilter, 10)
-        filtered = filtered.filter((m) => m.status === sf)
-      }
-      const total = filtered.length
-      const totalPgs = Math.max(1, Math.ceil(total / perPage))
-      const startIndex = (page - 1) * perPage
-      const paginated = filtered.slice(startIndex, startIndex + perPage)
-
-      setMerchants(paginated)
-      setTotalCount(total)
-      setTotalPages(totalPgs)
+      toast.error('Failed to load merchants: ' + err.message)
     } finally {
       setMerchantsLoading(false)
     }
@@ -417,31 +389,8 @@ export default function AdminPage() {
         handleLogout(true)
         return
       }
-      // Demo fallback when backend is unavailable
-      const activeConfig = getAppConfig()
-      const mockMerchant =
-        MOCK_MERCHANTS.find((m) => m.id === selectedMerchantId) || {
-          id: selectedMerchantId,
-          name: 'Demo Merchant',
-          industry: 'peptide',
-          industryLabel: 'Peptides & Research Chemicals',
-          status: 1,
-          processor: 'West Town',
-          stats: { totalItems: 20, notUploaded: 12, pending: 4, confirmed: 4, rejected: 0 },
-          lastUploadedAt: new Date().toISOString(),
-        }
-      const indConfig =
-        activeConfig.industries[mockMerchant.industry] || activeConfig.industries.general
-      const checklist = buildChecklist(indConfig, [])
-
-      setDetailData({
-        merchant: mockMerchant,
-        industry: indConfig,
-        checklist,
-        stats: computeStats(checklist),
-        stages: activeConfig.merchant_stages,
-        supportContact: activeConfig.support_contact,
-      })
+      setDetailError(err.message || 'Failed to load merchant detail')
+      toast.error('Failed to load merchant: ' + err.message)
     } finally {
       setDetailLoading(false)
     }
@@ -649,19 +598,6 @@ export default function AdminPage() {
               className="w-full py-2.5 bg-black text-white text-sm font-semibold rounded-lg hover:bg-gray-800 transition-colors"
             >
               Sign In
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                const demoToken = 'demo-admin-override'
-                setToken(demoToken)
-                try {
-                  localStorage.setItem('ahg_admin_token', demoToken)
-                } catch {}
-              }}
-              className="w-full py-2 bg-teal-50 hover:bg-teal-100 text-teal-800 text-xs font-bold rounded-lg border border-teal-200 transition-colors"
-            >
-              Bypass Login (Demo Mode)
             </button>
           </form>
         </div>
@@ -1056,7 +992,7 @@ export default function AdminPage() {
           SCREEN 3: APPLICATION CONFIGURATION DASHBOARD
           ========================================================================= */}
       {currentView === 'config' && (
-        <AppConfigDashboard onBack={handleCloseConfig} />
+        <AppConfigDashboard onBack={handleCloseConfig} adminToken={token} />
       )}
 
       {/* Rejection Reason Modal Dialog */}

@@ -1,10 +1,8 @@
 import { AppConfigState } from '../types/appConfig'
-import { AdminMerchantItem } from '../../shared/types'
 
 /**
- * Global Application Configuration
+ * Global Application Configuration Defaults
  * Seeded directly from migrations/0003_seed_app_config.sql
- * Can be overridden in runtime via localStorage or synced with Cloudflare D1.
  */
 export const DEFAULT_APP_CONFIG: AppConfigState = {
   industries: {
@@ -462,109 +460,3 @@ export const DEFAULT_APP_CONFIG: AppConfigState = {
     other: 'general',
   },
 }
-
-/**
- * Fallback seed merchants for demo/offline mode when backend is unavailable
- */
-export const MOCK_MERCHANTS: AdminMerchantItem[] = [
-  {
-    id: 'HSMXZscgy7SwyCmz9QbF',
-    name: 'Drift Peptides',
-    industry: 'peptide',
-    industryLabel: 'Peptides & Research Chemicals',
-    status: 1,
-    processor: 'West Town',
-    stats: { totalItems: 20, notUploaded: 12, pending: 3, confirmed: 4, rejected: 1 },
-    lastUploadedAt: '2026-11-02 16:38:00',
-  },
-  {
-    id: 'paEsR4kb92LwvXbx1NJA',
-    name: 'The Health Depot of Doral',
-    industry: 'medical_telehealth',
-    industryLabel: 'Medical & Telehealth',
-    status: 1,
-    processor: 'West Town',
-    stats: { totalItems: 18, notUploaded: 10, pending: 4, confirmed: 4, rejected: 0 },
-    lastUploadedAt: '2026-04-30 13:52:32',
-  },
-  {
-    id: 'SRGg3SnZGzq82VEXgCL0',
-    name: 'Onyx BioLabs',
-    industry: 'peptide',
-    industryLabel: 'Peptides & Research Chemicals',
-    status: 2,
-    processor: 'Argyle - PB&T',
-    stats: { totalItems: 20, notUploaded: 6, pending: 6, confirmed: 8, rejected: 0 },
-    lastUploadedAt: '2026-06-29 20:57:16',
-  },
-  {
-    id: '8hBomfETaBEIt1EWFiBP',
-    name: 'Strng Seeds',
-    industry: 'hemp',
-    industryLabel: 'Hemp & CBD Industry',
-    status: 5,
-    processor: 'West Town',
-    stats: { totalItems: 19, notUploaded: 0, pending: 1, confirmed: 18, rejected: 0 },
-    lastUploadedAt: '2026-07-06 20:38:58',
-  },
-  {
-    id: 'qQrzh2Wy4aqRyoGU7InW',
-    name: 'HyperBloom USA',
-    industry: 'general',
-    industryLabel: 'General High-Risk Industry',
-    status: 1,
-    processor: 'West Town',
-    stats: { totalItems: 16, notUploaded: 12, pending: 2, confirmed: 2, rejected: 0 },
-    lastUploadedAt: '2026-09-25 13:42:48',
-  },
-  {
-    id: 'aLLgccuTI6BgFDa6DAUQ',
-    name: 'Yuno RX - WIZLO',
-    industry: 'medical_telehealth',
-    industryLabel: 'Medical & Telehealth',
-    status: 5,
-    processor: 'WIZLO',
-    stats: { totalItems: 18, notUploaded: 1, pending: 0, confirmed: 17, rejected: 0 },
-    lastUploadedAt: '2026-10-14 15:13:43',
-  },
-  {
-    id: 'p90fh7DSdxunJBRIXohn',
-    name: 'Kush queen',
-    industry: 'hemp',
-    industryLabel: 'Hemp & CBD Industry',
-    status: 2,
-    processor: 'Argyle - NABCO',
-    stats: { totalItems: 19, notUploaded: 8, pending: 4, confirmed: 6, rejected: 1 },
-    lastUploadedAt: '2026-11-03 21:21:14',
-  },
-  {
-    id: 'GswNrKaLJxhW3EJwvRuH',
-    name: 'Wonderland Chocolates',
-    industry: 'mushroom',
-    industryLabel: 'Metocin & Functional Mushroom',
-    status: 3,
-    processor: 'Argyle - NABCO',
-    stats: { totalItems: 21, notUploaded: 3, pending: 7, confirmed: 10, rejected: 1 },
-    lastUploadedAt: '2026-11-04 20:30:20',
-  },
-  {
-    id: 'nLsCxfSTbzKYMPqGV0Kl',
-    name: 'Pure Infinity Botanicals',
-    industry: 'kratom',
-    industryLabel: 'Kratom Products',
-    status: 5,
-    processor: 'Argyle - PB&T',
-    stats: { totalItems: 22, notUploaded: 0, pending: 1, confirmed: 21, rejected: 0 },
-    lastUploadedAt: '2026-07-29 13:47:17',
-  },
-  {
-    id: 'INJqamAV79neTT2LB3Wi',
-    name: "Willie's Remedy Seed Co.",
-    industry: 'hemp',
-    industryLabel: 'Hemp & CBD Industry',
-    status: 5,
-    processor: 'Argyle - NABCO',
-    stats: { totalItems: 19, notUploaded: 0, pending: 0, confirmed: 19, rejected: 0 },
-    lastUploadedAt: '2026-07-06 20:39:14',
-  },
-]

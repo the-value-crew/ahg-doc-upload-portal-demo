@@ -12,9 +12,10 @@ interface StepperStepProps {
     completed: boolean
     isCurrent: boolean
     isLast: boolean
+    isFirst: boolean
 }
 
-function StepperStep({ status, statusName, completed, isCurrent, isLast }: StepperStepProps) {
+function StepperStep({ status, statusName, completed, isCurrent, isLast, isFirst }: StepperStepProps) {
     return (
         <div className={`${!isLast ? 'flex-1' : ''} flex items-center`}>
             <div className="flex flex-col items-center relative group">
@@ -38,7 +39,13 @@ function StepperStep({ status, statusName, completed, isCurrent, isLast }: Stepp
                 </div>
 
                 <div
-                    className="absolute top-10 transform -translate-x-1/2 left-1/2 min-w-[140px] text-center text-xs font-bold tracking-tight"
+                    className={`absolute top-10 text-xs font-bold tracking-tight leading-snug w-24 sm:w-28 ${
+                        isFirst
+                            ? 'left-0 sm:left-1/2 sm:-translate-x-1/2 text-left sm:text-center'
+                            : isLast
+                                ? 'right-0 sm:left-1/2 sm:-translate-x-1/2 text-right sm:text-center'
+                                : 'left-1/2 -translate-x-1/2 text-center'
+                    }`}
                     style={{
                         color: isCurrent ? '#1A1A1A' : completed ? '#10B981' : '#9CA3AF',
                     }}
@@ -49,7 +56,7 @@ function StepperStep({ status, statusName, completed, isCurrent, isLast }: Stepp
 
             {!isLast && (
                 <div
-                    className={`flex-1 h-[2px] mx-3 transition-all ${completed ? 'bg-[#10B981]' : 'bg-[#E5E7EB]'
+                    className={`flex-1 h-[2px] mx-2 sm:mx-3 transition-all ${completed ? 'bg-[#10B981]' : 'bg-[#E5E7EB]'
                         }`}
                 ></div>
             )}
@@ -71,8 +78,8 @@ function UserStatusStepper({ status, stages }: UserStatusStepperProps) {
         : defaultStages
 
     return (
-        <div className="w-full p-6 md:p-8 py-8 md:py-12">
-            <div className="flex items-center w-full pt-2 pb-8">
+        <div className="w-full px-6 sm:px-10 md:px-12 py-6 sm:py-8">
+            <div className="flex items-center w-full pt-1 pb-10">
                 {statusKeys.map((statusName, index) => (
                     <StepperStep
                         key={index}
@@ -80,6 +87,7 @@ function UserStatusStepper({ status, stages }: UserStatusStepperProps) {
                         statusName={statusName}
                         completed={index + 1 < status}
                         isCurrent={index + 1 === status}
+                        isFirst={index === 0}
                         isLast={index === statusKeys.length - 1}
                     />
                 ))}

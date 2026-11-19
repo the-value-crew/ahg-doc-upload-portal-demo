@@ -1,9 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { ChecklistItem, ChecklistStats, PortalConfigSuccess } from '../../shared/types'
 import { fetchPortalConfig, findMerchantOnGhl } from '../services/api.client'
-import { MOCK_MERCHANTS } from '../config/appConfig'
-import { getAppConfig } from '../services/appConfig.service'
-import { buildChecklist, computeStats } from '../../shared/checklist'
 
 function isValidHexColor(color: string | null): boolean {
   if (!color) return false
@@ -99,37 +96,6 @@ export function usePortalData(merchantId: string | null) {
         }
       }
     } catch (err: any) {
-      // Demo fallback when backend is unavailable
-      const mockMerchant = MOCK_MERCHANTS.find((m) => m.id === merchantId)
-      if (mockMerchant) {
-        const appCfg = getAppConfig()
-        const indConfig = appCfg.industries[mockMerchant.industry] || appCfg.industries.general
-        const chk = buildChecklist(indConfig, [])
-        const st = computeStats(chk)
-        applyPortalData({
-          found: true,
-          merchant: {
-            id: mockMerchant.id,
-            name: mockMerchant.name,
-            industry: mockMerchant.industry,
-            industryLabel: indConfig.label,
-            status: mockMerchant.status,
-            processor: mockMerchant.processor || null,
-          },
-          brand: appCfg.portal_defaults,
-          branding: appCfg.branding,
-          supportContact: appCfg.support_contact,
-          industry: indConfig,
-          uploadRules: appCfg.upload_rules,
-          checklist: chk,
-          stats: st,
-          stages: appCfg.merchant_stages,
-          documents: [],
-        })
-        retryCountRef.current = 0
-        return
-      }
-
       if (err.status === 404 || err.message?.includes('not found') || err.message?.includes('404')) {
         setIs404(true)
       } else {
