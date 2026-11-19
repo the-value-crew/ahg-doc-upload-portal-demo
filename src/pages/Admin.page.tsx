@@ -31,6 +31,7 @@ import {
   FiX,
   FiLogOut,
   FiSliders,
+  FiSettings,
 } from 'react-icons/fi'
 import { MOCK_MERCHANTS } from '../config/appConfig'
 import { getAppConfig } from '../services/appConfig.service'
@@ -711,7 +712,7 @@ export default function AdminPage() {
                   setStatusFilter(e.target.value)
                   setPage(1)
                 }}
-                className="py-2 px-3 bg-white border border-gray-300 rounded-lg text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-teal-500 font-medium"
+                className="py-2 pl-3.5 pr-9 bg-white border border-gray-300 rounded-lg text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-teal-500 font-medium cursor-pointer"
               >
                 <option value="ALL">All Stages</option>
                 <option value="1">1. Onboarding booked</option>
@@ -741,7 +742,7 @@ export default function AdminPage() {
                 title="Application Configuration"
                 aria-label="Application Configuration"
               >
-                <FiSliders className="w-4 h-4" />
+                <FiSettings className="w-4 h-4" />
               </button>
 
               {/* Logout icon button */}
@@ -817,7 +818,7 @@ export default function AdminPage() {
                             <select
                               value={m.status}
                               onChange={(e) => handleUpdateMerchantStatus(m.id, parseInt(e.target.value, 10))}
-                              className="text-xs font-bold rounded-lg border border-gray-300 py-1.5 px-2 bg-white text-gray-800 focus:outline-none focus:ring-2 focus:ring-teal-500"
+                              className="text-xs font-bold rounded-lg border border-gray-300 py-1.5 pl-2.5 pr-8 bg-white text-gray-800 focus:outline-none focus:ring-2 focus:ring-teal-500 cursor-pointer"
                             >
                               <option value={1}>1. Onboarding booked</option>
                               <option value={2}>2. Doc Collection</option>
@@ -884,7 +885,7 @@ export default function AdminPage() {
                         setPerPage(parseInt(e.target.value, 10))
                         setPage(1)
                       }}
-                      className="bg-white border border-gray-300 rounded px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-teal-500"
+                      className="bg-white border border-gray-300 rounded pl-2 pr-7 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-teal-500 cursor-pointer"
                     >
                       <option value={10}>10</option>
                       <option value={25}>25</option>
@@ -966,7 +967,7 @@ export default function AdminPage() {
                 title="Application Configuration"
                 aria-label="Application Configuration"
               >
-                <FiSliders className="w-3.5 h-3.5" />
+                <FiSettings className="w-3.5 h-3.5" />
               </button>
 
               {!trustedEmbedOrigin && (

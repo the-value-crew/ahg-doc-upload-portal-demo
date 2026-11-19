@@ -155,7 +155,7 @@ function TableRow({
                         onStatusChange(item.type, parseInt(val, 10))
                       }
                     }}
-                    className={`text-xs font-bold rounded-lg border py-1.5 px-2.5 transition-colors focus:outline-none focus:ring-2 focus:ring-teal-500 cursor-pointer ${
+                    className={`text-xs font-bold rounded-lg border py-1.5 pl-2.5 pr-8 transition-colors focus:outline-none focus:ring-2 focus:ring-teal-500 cursor-pointer ${
                       item.status === 2 || item.status === FileStatus.VERIFIED
                         ? 'bg-emerald-50 text-emerald-800 border-emerald-300'
                         : item.status === 1 || item.status === FileStatus.PENDING

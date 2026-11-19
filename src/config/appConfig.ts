@@ -357,7 +357,7 @@ export const DEFAULT_APP_CONFIG: AppConfigState = {
             { type: 101, name: 'Articles of Incorporation', description: 'State-filed non-profit charter or articles of incorporation.', required: true, tag: null },
             { type: 102, name: 'SS4/EIN Letter', description: 'Official IRS tax ID confirmation.', required: true, tag: null },
             { type: 103, name: 'Voided Check OR Signed Bank Letter', description: 'Pre-printed check or signed bank officer letter for settlements.', required: true, tag: null },
-            { type: 104, name: 'Driver Licenses of Responsible Party', description: 'Color photo ID for Executive Director, President, or authorized officer.', required: true, tag: null },
+            { type: 104, name: "Driver's Licenses of Responsible Party", description: 'Color photo ID for Executive Director, President, or authorized officer.', required: true, tag: null },
             { type: 105, name: 'Bylaws (Corp) / Operating Agreement', description: 'Signed organization bylaws detailing officer authority and voting rules.', required: true, tag: null },
             { type: 107, name: 'Proof of Non-Profit Status (501(c)(3) or (4))', description: 'IRS Tax-Exempt Status Determination Letter.', required: true, tag: null },
             { type: 108, name: 'Doc Indicating Board of Directors if not Apparent', description: 'Current roster of Board of Directors and document indicating board of directors if not apparent.', required: true, tag: null },

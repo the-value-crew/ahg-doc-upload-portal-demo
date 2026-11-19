@@ -256,6 +256,12 @@ function Dropzone({
             options={categoryOptions}
             placeholder="Choose document type..."
             className="text-sm"
+            styles={{
+              indicatorsContainer: (base) => ({
+                ...base,
+                paddingRight: '8px',
+              }),
+            }}
           />
         </div>
       )}

@@ -284,7 +284,7 @@ export function IndustriesSection({ industries, onUpdateIndustry }: IndustriesSe
                                     e.target.value ? e.target.value : null
                                   )
                                 }
-                                className="px-2 py-1 text-xs bg-white border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-teal-500 text-gray-700"
+                                className="py-1 pl-2.5 pr-7 text-xs bg-white border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-teal-500 text-gray-700 cursor-pointer"
                               >
                                 <option value="">No Tag</option>
                                 <option value="Signature Doc">Signature Doc</option>

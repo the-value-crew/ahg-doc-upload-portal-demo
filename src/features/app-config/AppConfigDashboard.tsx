@@ -10,6 +10,7 @@ import {
   FiPhone,
   FiUploadCloud,
   FiSliders,
+  FiSettings,
 } from 'react-icons/fi'
 import { toast } from 'react-toastify'
 import { AppConfigState } from '../../types/appConfig'
@@ -111,12 +112,12 @@ export function AppConfigDashboard({ onBack }: AppConfigDashboardProps) {
             <span>Back to Merchants</span>
           </button>
           <div className="flex items-center gap-2.5">
+            <div className="p-2 rounded-xl bg-teal-50 text-teal-800 border border-teal-200 shadow-2xs">
+              <FiSettings className="w-5 h-5" />
+            </div>
             <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-gray-900">
               App Config
             </h1>
-            <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-teal-50 text-teal-800 border border-teal-200">
-              0003 Seed Aligned
-            </span>
           </div>
           <p className="mt-1 text-xs sm:text-sm text-gray-500 max-w-2xl">
             Manage merchant underwriting stages, document requirements, portal branding, and GoHighLevel CRM mappings without database migrations.
@@ -198,10 +199,7 @@ export function AppConfigDashboard({ onBack }: AppConfigDashboardProps) {
       </div>
 
       {/* Status Bar */}
-      <div className="flex items-center justify-between text-xs text-gray-500 px-1">
-        <div>
-          <span>Editing active application configuration</span>
-        </div>
+      <div className="flex items-center justify-end text-xs text-gray-500 px-1">
         <div>
           {hasChanges ? (
             <span className="inline-flex items-center gap-1.5 text-amber-600 font-semibold">
