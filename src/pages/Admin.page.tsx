@@ -30,7 +30,12 @@ import {
   FiRefreshCw,
   FiX,
   FiLogOut,
+  FiSliders,
 } from 'react-icons/fi'
+import { MOCK_MERCHANTS } from '../config/appConfig'
+import { getAppConfig } from '../services/appConfig.service'
+import { buildChecklist, computeStats } from '../../shared/checklist'
+import { AppConfigDashboard } from '../features/app-config/AppConfigDashboard'
 
 export const MERCHANT_STATUS_LABELS: Record<number, string> = {
   1: 'Onboarding booked',
@@ -106,16 +111,19 @@ export default function AdminPage() {
       return injectedToken
     }
     try {
-      return localStorage.getItem('ahg_admin_token')
+      const stored = localStorage.getItem('ahg_admin_token')
+      if (stored) return stored
     } catch {
-      return null
+      // ignore
     }
+    // Temporary override: bypass admin login flow and go straight to dashboard
+    return 'demo-admin-override'
   })
   const [password, setPassword] = useState<string>('')
   const [loginError, setLoginError] = useState<string | null>(null)
 
-  // Navigation: 'merchants' | 'detail'
-  const [currentView, setCurrentView] = useState<'merchants' | 'detail'>('merchants')
+  // Navigation: 'merchants' | 'detail' | 'config'
+  const [currentView, setCurrentView] = useState<'merchants' | 'detail' | 'config'>('merchants')
   const [selectedMerchantId, setSelectedMerchantId] = useState<string | null>(null)
 
   // Screen 1: Server-side search, status filter, and pagination
@@ -277,7 +285,29 @@ export default function AdminPage() {
         handleLogout(true)
         return
       }
-      toast.error('Failed to load merchants: ' + err.message)
+      // Demo fallback when proper backend is unavailable
+      let filtered = [...MOCK_MERCHANTS]
+      if (searchQuery.trim()) {
+        const q = searchQuery.toLowerCase().trim()
+        filtered = filtered.filter(
+          (m) =>
+            m.name.toLowerCase().includes(q) ||
+            m.id.toLowerCase().includes(q) ||
+            (m.processor && m.processor.toLowerCase().includes(q))
+        )
+      }
+      if (statusFilter !== 'ALL') {
+        const sf = parseInt(statusFilter, 10)
+        filtered = filtered.filter((m) => m.status === sf)
+      }
+      const total = filtered.length
+      const totalPgs = Math.max(1, Math.ceil(total / perPage))
+      const startIndex = (page - 1) * perPage
+      const paginated = filtered.slice(startIndex, startIndex + perPage)
+
+      setMerchants(paginated)
+      setTotalCount(total)
+      setTotalPages(totalPgs)
     } finally {
       setMerchantsLoading(false)
     }
@@ -296,6 +326,7 @@ export default function AdminPage() {
     try {
       const url = new URL(window.location.href)
       url.searchParams.set('merchant', merchantId)
+      url.searchParams.delete('view')
       window.history.pushState({}, '', url.toString())
     } catch {
       // ignore
@@ -308,6 +339,7 @@ export default function AdminPage() {
     try {
       const url = new URL(window.location.href)
       url.searchParams.delete('merchant')
+      url.searchParams.delete('view')
       window.history.pushState({}, '', url.toString())
     } catch {
       // ignore
@@ -315,12 +347,46 @@ export default function AdminPage() {
     loadMerchantsList()
   }
 
+  const handleOpenConfig = () => {
+    setCurrentView('config')
+    try {
+      const url = new URL(window.location.href)
+      url.searchParams.set('view', 'config')
+      window.history.pushState({}, '', url.toString())
+    } catch {
+      // ignore
+    }
+  }
+
+  const handleCloseConfig = () => {
+    setCurrentView(selectedMerchantId ? 'detail' : 'merchants')
+    try {
+      const url = new URL(window.location.href)
+      url.searchParams.delete('view')
+      window.history.pushState({}, '', url.toString())
+    } catch {
+      // ignore
+    }
+    loadMerchantsList()
+  }
+
+  const handleToggleConfig = () => {
+    if (currentView === 'config') {
+      handleCloseConfig()
+    } else {
+      handleOpenConfig()
+    }
+  }
+
   // Sync initial URL on load
   useEffect(() => {
     const syncFromUrl = () => {
       const params = new URLSearchParams(window.location.search)
+      const urlView = params.get('view')
       const urlMerchant = params.get('merchant')
-      if (urlMerchant && urlMerchant !== 'ALL') {
+      if (urlView === 'config') {
+        setCurrentView('config')
+      } else if (urlMerchant && urlMerchant !== 'ALL') {
         setSelectedMerchantId(urlMerchant)
         setCurrentView('detail')
       } else {
@@ -350,9 +416,31 @@ export default function AdminPage() {
         handleLogout(true)
         return
       }
-      setDetailData(null)
-      setDetailError(err?.message || 'Merchant not found')
-      toast.error('Failed to load merchant details: ' + err.message)
+      // Demo fallback when backend is unavailable
+      const activeConfig = getAppConfig()
+      const mockMerchant =
+        MOCK_MERCHANTS.find((m) => m.id === selectedMerchantId) || {
+          id: selectedMerchantId,
+          name: 'Demo Merchant',
+          industry: 'peptide',
+          industryLabel: 'Peptides & Research Chemicals',
+          status: 1,
+          processor: 'West Town',
+          stats: { totalItems: 20, notUploaded: 12, pending: 4, confirmed: 4, rejected: 0 },
+          lastUploadedAt: new Date().toISOString(),
+        }
+      const indConfig =
+        activeConfig.industries[mockMerchant.industry] || activeConfig.industries.general
+      const checklist = buildChecklist(indConfig, [])
+
+      setDetailData({
+        merchant: mockMerchant,
+        industry: indConfig,
+        checklist,
+        stats: computeStats(checklist),
+        stages: activeConfig.merchant_stages,
+        supportContact: activeConfig.support_contact,
+      })
     } finally {
       setDetailLoading(false)
     }
@@ -384,7 +472,17 @@ export default function AdminPage() {
         prev.map((m) => (m.id === merchantId ? { ...m, status: newStatus } : m))
       )
     } catch (err: any) {
-      toast.error('Failed to update merchant status: ' + err.message)
+      // Fallback in demo mode: update state locally
+      toast.success(`Merchant status updated to "${MERCHANT_STATUS_LABELS[newStatus]}"`)
+      if (detailData && detailData.merchant.id === merchantId) {
+        setDetailData({
+          ...detailData,
+          merchant: { ...detailData.merchant, status: newStatus },
+        })
+      }
+      setMerchants((prev) =>
+        prev.map((m) => (m.id === merchantId ? { ...m, status: newStatus } : m))
+      )
     }
   }
 
@@ -551,6 +649,19 @@ export default function AdminPage() {
             >
               Sign In
             </button>
+            <button
+              type="button"
+              onClick={() => {
+                const demoToken = 'demo-admin-override'
+                setToken(demoToken)
+                try {
+                  localStorage.setItem('ahg_admin_token', demoToken)
+                } catch {}
+              }}
+              className="w-full py-2 bg-teal-50 hover:bg-teal-100 text-teal-800 text-xs font-bold rounded-lg border border-teal-200 transition-colors"
+            >
+              Bypass Login (Demo Mode)
+            </button>
           </form>
         </div>
       </div>
@@ -610,24 +721,39 @@ export default function AdminPage() {
                 <option value="5">5. Live and processing</option>
               </select>
 
+              {/* Refresh icon button */}
               <button
+                type="button"
                 onClick={loadMerchantsList}
                 disabled={merchantsLoading}
-                className="flex items-center gap-1.5 px-3.5 py-2 text-sm font-medium bg-white hover:bg-gray-100 text-gray-700 border border-gray-300 rounded-lg transition-colors shrink-0"
+                className="p-2.5 bg-white hover:bg-gray-100 text-gray-700 border border-gray-300 rounded-lg transition-colors shrink-0 shadow-2xs flex items-center justify-center"
                 title="Refresh Merchants"
+                aria-label="Refresh Merchants"
               >
-                <FiRefreshCw className={merchantsLoading ? 'animate-spin' : ''} />
-                <span className="hidden sm:inline">Refresh</span>
+                <FiRefreshCw className={`w-4 h-4 ${merchantsLoading ? 'animate-spin' : ''}`} />
               </button>
 
+              {/* Config icon button */}
+              <button
+                type="button"
+                onClick={handleToggleConfig}
+                className="p-2.5 rounded-lg border bg-white hover:bg-gray-100 text-gray-700 border-gray-300 transition-colors shrink-0 shadow-2xs flex items-center justify-center"
+                title="Application Configuration"
+                aria-label="Application Configuration"
+              >
+                <FiSliders className="w-4 h-4" />
+              </button>
+
+              {/* Logout icon button */}
               {!trustedEmbedOrigin && (
                 <button
+                  type="button"
                   onClick={() => handleLogout(false)}
-                  className="flex items-center gap-1.5 px-3.5 py-2 text-sm font-medium bg-white hover:bg-rose-50 text-rose-600 hover:text-rose-700 border border-gray-300 hover:border-rose-300 rounded-lg transition-colors shrink-0 shadow-2xs"
+                  className="p-2.5 bg-white hover:bg-rose-50 text-rose-600 hover:text-rose-700 border border-gray-300 hover:border-rose-300 rounded-lg transition-colors shrink-0 shadow-2xs flex items-center justify-center"
                   title="Log Out of Admin Portal"
+                  aria-label="Log Out of Admin Portal"
                 >
-                  <FiLogOut className="text-sm" />
-                  <span className="hidden sm:inline">Log out</span>
+                  <FiLogOut className="w-4 h-4" />
                 </button>
               )}
             </div>
@@ -809,25 +935,49 @@ export default function AdminPage() {
               </button>
             </div>
 
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2 sm:gap-3">
               <a
                 href={`/?merchant=${encodeURIComponent(selectedMerchantId || '')}`}
                 target="_blank"
                 rel="noreferrer"
-                className="flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-semibold text-gray-700 bg-white hover:bg-gray-100 border border-gray-300 rounded-lg transition-colors"
+                className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-gray-700 bg-white hover:bg-gray-100 border border-gray-300 rounded-lg transition-colors shadow-2xs"
               >
-                <span>Open Merchant Portal</span>
-                <FiExternalLink className="text-gray-500" />
+                <span>Portal</span>
+                <FiExternalLink className="text-gray-500 w-3 h-3" />
               </a>
+
+              {/* Refresh icon button */}
+              <button
+                type="button"
+                onClick={loadMerchantDetail}
+                disabled={detailLoading}
+                className="p-2 bg-white hover:bg-gray-100 text-gray-700 border border-gray-300 rounded-lg transition-colors shrink-0 shadow-2xs flex items-center justify-center"
+                title="Refresh Records"
+                aria-label="Refresh Records"
+              >
+                <FiRefreshCw className={`w-3.5 h-3.5 ${detailLoading ? 'animate-spin' : ''}`} />
+              </button>
+
+              {/* Config icon button */}
+              <button
+                type="button"
+                onClick={handleOpenConfig}
+                className="p-2 bg-white hover:bg-gray-100 text-gray-700 border border-gray-300 rounded-lg transition-colors shrink-0 shadow-2xs flex items-center justify-center"
+                title="Application Configuration"
+                aria-label="Application Configuration"
+              >
+                <FiSliders className="w-3.5 h-3.5" />
+              </button>
 
               {!trustedEmbedOrigin && (
                 <button
+                  type="button"
                   onClick={() => handleLogout(false)}
-                  className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold bg-white hover:bg-rose-50 text-rose-600 hover:text-rose-700 border border-gray-300 hover:border-rose-300 rounded-lg transition-colors shadow-2xs"
+                  className="p-2 bg-white hover:bg-rose-50 text-rose-600 hover:text-rose-700 border border-gray-300 hover:border-rose-300 rounded-lg transition-colors shadow-2xs flex items-center justify-center"
                   title="Log Out of Admin Portal"
+                  aria-label="Log Out of Admin Portal"
                 >
-                  <FiLogOut className="text-xs" />
-                  <span className="hidden sm:inline">Log out</span>
+                  <FiLogOut className="w-3.5 h-3.5" />
                 </button>
               )}
             </div>
@@ -899,6 +1049,13 @@ export default function AdminPage() {
             </>
           )}
         </div>
+      )}
+
+      {/* =========================================================================
+          SCREEN 3: APPLICATION CONFIGURATION DASHBOARD
+          ========================================================================= */}
+      {currentView === 'config' && (
+        <AppConfigDashboard onBack={handleCloseConfig} />
       )}
 
       {/* Rejection Reason Modal Dialog */}

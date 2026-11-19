@@ -4,6 +4,7 @@ import { handlePortalConfig } from './routes/portalConfig'
 import { handleFindMerchantOnGhl } from './routes/findMerchantOnGhl'
 import { handleUpload } from './routes/upload'
 import { handleAdminLogin } from './routes/adminLogin'
+import { handleAdminGetConfig, handleAdminSaveConfig } from './routes/adminConfig'
 import {
   handleAdminGetMerchants,
   handleAdminGetMerchantDetail,
@@ -52,6 +53,16 @@ export default {
       // POST /api/admin/login
       if (pathname === '/api/admin/login' && request.method === 'POST') {
         return await handleAdminLogin(request, env)
+      }
+
+      // GET /api/admin/config
+      if (pathname === '/api/admin/config' && request.method === 'GET') {
+        return await handleAdminGetConfig(request, env)
+      }
+
+      // POST /api/admin/config
+      if (pathname === '/api/admin/config' && request.method === 'POST') {
+        return await handleAdminSaveConfig(request, env)
       }
 
       // GET /api/admin/merchants (Search & Paginated)
