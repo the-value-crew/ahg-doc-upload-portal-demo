@@ -111,6 +111,8 @@ export interface ChecklistItem {
   uploadedAt?: string
   note?: string | null
   sharepointItemId?: string
+  isCustom?: boolean
+  hasFile?: boolean
 }
 
 export interface ChecklistStats {

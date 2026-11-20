@@ -80,10 +80,19 @@ export async function handleUpload(request: Request, env: Env): Promise<Response
       }
     }
     if (!validTypes.includes(documentType)) {
-      return new Response(
-        JSON.stringify({ error: `Document type ${documentType} is not valid for ${indConfig.label}` }),
-        { status: 400, headers: { 'Content-Type': 'application/json' } }
+      const customDoc = await env.DB.prepare(
+        `SELECT document_type FROM documents
+         WHERE merchant_id = ? AND document_type = ? AND (custom_name IS NOT NULL OR document_type >= 1001)`
       )
+        .bind(merchant.id, documentType)
+        .first<{ document_type: number }>()
+
+      if (!customDoc) {
+        return new Response(
+          JSON.stringify({ error: `Document type ${documentType} is not valid for ${indConfig.label}` }),
+          { status: 400, headers: { 'Content-Type': 'application/json' } }
+        )
+      }
     }
   }
 

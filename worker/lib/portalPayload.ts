@@ -62,7 +62,8 @@ export async function buildPortalPayload(env: Env, merchantId: string): Promise<
 
   // 3. Fetch document rows for this merchant
   const docRows = await env.DB.prepare(
-    `SELECT merchant_id, document_type, status, note, uploaded_at, status_updated_at, filename, sharepoint_item_id
+    `SELECT merchant_id, document_type, status, note, uploaded_at, status_updated_at, filename, sharepoint_item_id,
+            custom_name, custom_description, custom_required, custom_tag
      FROM documents
      WHERE merchant_id = ?
      ORDER BY uploaded_at DESC`
@@ -77,6 +78,10 @@ export async function buildPortalPayload(env: Env, merchantId: string): Promise<
       status_updated_at: string
       filename: string | null
       sharepoint_item_id: string | null
+      custom_name: string | null
+      custom_description: string | null
+      custom_required: number | null
+      custom_tag: string | null
     }>()
 
   const rawDocs = docRows.results || []

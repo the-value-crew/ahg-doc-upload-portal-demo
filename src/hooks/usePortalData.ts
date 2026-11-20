@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { ChecklistItem, ChecklistStats, PortalConfigSuccess } from '../../shared/types'
-import { fetchPortalConfig, findMerchantOnGhl } from '../services/api.client'
+import { fetchPortalConfig, findMerchantOnGhl, syncMerchantStatus } from '../services/api.client'
 
 function isValidHexColor(color: string | null): boolean {
   if (!color) return false
@@ -73,6 +73,16 @@ export function usePortalData(merchantId: string | null) {
         applyPortalData(firstRes)
         retryCountRef.current = 0
         setLoading(false)
+        // Non-blocking background GHL status sync after initial DB load
+        syncMerchantStatus(merchantId)
+          .then((syncRes) => {
+            if (syncRes?.ok && typeof syncRes.status === 'number') {
+              setMerchantStatus(syncRes.status)
+            }
+          })
+          .catch(() => {
+            // Ignore background sync errors so portal remains responsive
+          })
         return
       }
 

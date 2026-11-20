@@ -11,9 +11,11 @@ import {
   adminLogin,
   fetchAdminMerchants,
   fetchAdminMerchantDetail,
-  updateAdminMerchantStatus,
   updateDocumentStatus,
   requestAdminDownloadUrl,
+  createAdminDocumentRequest,
+  updateAdminDocumentRequest,
+  deleteAdminDocumentRequest,
 } from '../services/api.client'
 import StatsHero from '../components/StatsHero'
 import UploadTable from '../components/UploadTable/UploadTable'
@@ -30,6 +32,7 @@ import {
   FiRefreshCw,
   FiX,
   FiLogOut,
+  FiPlus,
 } from 'react-icons/fi'
 
 export const MERCHANT_STATUS_LABELS: Record<number, string> = {
@@ -137,6 +140,19 @@ export default function AdminPage() {
   const [rejectModalOpen, setRejectModalOpen] = useState<boolean>(false)
   const [rejectingDocType, setRejectingDocType] = useState<number | null>(null)
   const [rejectionReason, setRejectionReason] = useState<string>('')
+
+  // Add / Edit Document Request Modal State
+  const [requestModalOpen, setRequestModalOpen] = useState<boolean>(false)
+  const [editingCustomDocType, setEditingCustomDocType] = useState<number | null>(null)
+  const [reqDocName, setReqDocName] = useState<string>('')
+  const [reqDocDescription, setReqDocDescription] = useState<string>('')
+  const [reqDocRequired, setReqDocRequired] = useState<boolean>(true)
+  const [reqDocTag, setReqDocTag] = useState<string>('')
+  const [reqSubmitting, setReqSubmitting] = useState<boolean>(false)
+
+  // Delete Requested Document Confirmation Modal State
+  const [deletingCustomDoc, setDeletingCustomDoc] = useState<ChecklistItem | null>(null)
+  const [deleteSubmitting, setDeleteSubmitting] = useState<boolean>(false)
 
   const containerRef = useRef<HTMLDivElement>(null)
 
@@ -364,31 +380,7 @@ export default function AdminPage() {
     }
   }, [token, selectedMerchantId, currentView, loadMerchantDetail])
 
-  // 7. Update Merchant Underwriting Stage
-  const handleUpdateMerchantStatus = async (merchantId: string, newStatus: number) => {
-    if (!token) return
-    try {
-      await updateAdminMerchantStatus(token, merchantId, newStatus)
-      toast.success(`Merchant status updated to "${MERCHANT_STATUS_LABELS[newStatus]}"`)
-
-      // Update in detail view state if active
-      if (detailData && detailData.merchant.id === merchantId) {
-        setDetailData({
-          ...detailData,
-          merchant: { ...detailData.merchant, status: newStatus },
-        })
-      }
-
-      // Update in merchants list state if present
-      setMerchants((prev) =>
-        prev.map((m) => (m.id === merchantId ? { ...m, status: newStatus } : m))
-      )
-    } catch (err: any) {
-      toast.error('Failed to update merchant status: ' + err.message)
-    }
-  }
-
-  // 8. Document Action Handlers
+  // 7. Document Action Handlers
   const handleViewDocument = async (docType: number, filename?: string) => {
     if (!token || !selectedMerchantId) return
     try {
@@ -659,17 +651,16 @@ export default function AdminPage() {
                     {merchants.map((m) => {
                       return (
                         <tr key={m.id} className="hover:bg-gray-50/80 transition-colors">
-                          {/* Merchant Name (Clickable link opening portal in new tab) */}
+                          {/* Merchant Name (Clickable button opening merchant detail page) */}
                           <td className="py-3.5 px-4">
-                            <a
-                              href={`/?merchant=${encodeURIComponent(m.id)}`}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="font-bold text-gray-900 text-base hover:text-teal-700 hover:underline block"
-                              title="Click to open Merchant Portal in new tab"
+                            <button
+                              type="button"
+                              onClick={() => handleViewMerchantDetail(m.id)}
+                              className="font-bold text-gray-900 text-base hover:text-teal-700 hover:underline block text-left"
+                              title="View merchant details"
                             >
                               {m.name}
-                            </a>
+                            </button>
                             <div className="flex items-center gap-2 mt-0.5">
                               <span className="text-xs text-gray-500 font-medium">{m.industryLabel || m.industry}</span>
                             </div>
@@ -686,19 +677,11 @@ export default function AdminPage() {
                             )}
                           </td>
 
-                          {/* Underwriting Stage with Inline Admin Dropdown */}
+                          {/* Underwriting Stage (Synced from GHL, read-only) */}
                           <td className="py-3.5 px-4 whitespace-nowrap">
-                            <select
-                              value={m.status}
-                              onChange={(e) => handleUpdateMerchantStatus(m.id, parseInt(e.target.value, 10))}
-                              className="text-xs font-bold rounded-lg border border-gray-300 py-1.5 px-2 bg-white text-gray-800 focus:outline-none focus:ring-2 focus:ring-teal-500"
-                            >
-                              <option value={1}>1. Onboarding booked</option>
-                              <option value={2}>2. Doc Collection</option>
-                              <option value={3}>3. Application in review</option>
-                              <option value={4}>4. Approved</option>
-                              <option value={5}>5. Live and processing</option>
-                            </select>
+                            <span className="inline-flex items-center text-xs font-bold rounded-lg border border-gray-200 py-1 px-2.5 bg-gray-50 text-gray-800">
+                              {MERCHANT_STATUS_LABELS[m.status] || 'Unknown'}
+                            </span>
                           </td>
 
                           {/* Status Breakdown (plain text format suitable for table cell) */}
@@ -810,6 +793,22 @@ export default function AdminPage() {
             </div>
 
             <div className="flex items-center gap-3">
+              <button
+                type="button"
+                onClick={() => {
+                  setEditingCustomDocType(null)
+                  setReqDocName('')
+                  setReqDocDescription('')
+                  setReqDocRequired(true)
+                  setReqDocTag('')
+                  setRequestModalOpen(true)
+                }}
+                className="flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-bold text-white bg-[#1A1A1A] hover:bg-black rounded-lg transition-colors shadow-2xs"
+              >
+                <FiPlus className="text-sm" />
+                <span>Add document</span>
+              </button>
+
               <a
                 href={`/?merchant=${encodeURIComponent(selectedMerchantId || '')}`}
                 target="_blank"
@@ -872,6 +871,40 @@ export default function AdminPage() {
 
               {/* BOTTOM SECTION: Sectioned Document Tables matching Portal layout */}
               <div className="space-y-8 pt-4">
+                {(() => {
+                  const requestedItems = (detailData.checklist || []).filter(
+                    (it: ChecklistItem) => it.sectionId === 'requested_documents'
+                  )
+                  if (requestedItems.length === 0) return null
+                  return (
+                    <UploadTable
+                      key="requested_documents"
+                      sectionTitle="Requested Documents"
+                      sectionDescription="Documents requested by your onboarding manager"
+                      items={requestedItems}
+                      merchantId={selectedMerchantId!}
+                      supportContact={detailData.supportContact}
+                      adminMode={true}
+                      onFileUpload={() => { }}
+                      onRefresh={loadMerchantDetail}
+                      onView={handleViewDocument}
+                      onStatusChange={handleDocumentStatusChange}
+                      onVerify={handleVerifyDocument}
+                      onReject={handleOpenRejectModal}
+                      onReset={handleResetDocument}
+                      onEditCustomDoc={(item) => {
+                        setEditingCustomDocType(item.type)
+                        setReqDocName(item.name || '')
+                        setReqDocDescription(item.description || '')
+                        setReqDocRequired(item.required !== false)
+                        setReqDocTag(item.tag || '')
+                        setRequestModalOpen(true)
+                      }}
+                      onDeleteCustomDoc={(item) => setDeletingCustomDoc(item)}
+                    />
+                  )
+                })()}
+
                 {(detailData.industry?.sections || []).map((section: any) => {
                   const sectionItems = (detailData.checklist || []).filter(
                     (it: ChecklistItem) => it.sectionId === section.id
@@ -950,6 +983,212 @@ export default function AdminPage() {
                 className="px-4 py-2 text-xs font-bold text-white bg-rose-600 hover:bg-rose-700 rounded-lg transition-colors shadow-2xs"
               >
                 Confirm Rejection
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Add / Edit Document Request Modal Dialog */}
+      {requestModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-xl border border-gray-200 animate-in fade-in zoom-in-95">
+            <div className="flex items-center justify-between pb-3 border-b border-gray-100 mb-4">
+              <div className="flex items-center space-x-2 text-gray-900">
+                <FiFileText className="w-5 h-5" />
+                <h3 className="font-bold text-base">
+                  {editingCustomDocType !== null ? 'Edit Document' : 'Add Document'}
+                </h3>
+              </div>
+              <button
+                onClick={() => !reqSubmitting && setRequestModalOpen(false)}
+                className="text-gray-400 hover:text-black p-1 rounded-full"
+              >
+                <FiX className="w-5 h-5" />
+              </button>
+            </div>
+
+            <p className="text-xs text-gray-600 mb-4 leading-relaxed">
+              {editingCustomDocType !== null
+                ? 'Update the document name, instructions, or requirement settings for this requested document.'
+                : (
+                  <>
+                    Request an additional document from this merchant. It will appear in their portal under{' '}
+                    <strong>Requested Documents</strong> and notify them by email.
+                  </>
+                )}
+            </p>
+
+            <form
+              onSubmit={async (e) => {
+                e.preventDefault()
+                if (!token || !selectedMerchantId || !reqDocName.trim() || reqSubmitting) return
+                setReqSubmitting(true)
+                const payload = {
+                  name: reqDocName.trim(),
+                  description: reqDocDescription.trim(),
+                  required: reqDocRequired,
+                  tag: reqDocTag.trim() ? reqDocTag.trim() : null,
+                }
+                try {
+                  if (editingCustomDocType !== null) {
+                    await updateAdminDocumentRequest(token, selectedMerchantId, editingCustomDocType, payload)
+                    toast.success('Document request updated')
+                  } else {
+                    const res = await createAdminDocumentRequest(token, selectedMerchantId, payload)
+                    if (res.emailSent) {
+                      toast.success('Document request added and merchant notified by email')
+                    } else {
+                      toast.success('Document request added')
+                      if (res.emailReason) {
+                        toast.info(`Email notification skipped: ${res.emailReason}`)
+                      }
+                    }
+                  }
+                  setRequestModalOpen(false)
+                  setEditingCustomDocType(null)
+                  setReqDocName('')
+                  setReqDocDescription('')
+                  setReqDocRequired(true)
+                  setReqDocTag('')
+                  await loadMerchantDetail()
+                } catch (err: any) {
+                  toast.error(err.message || 'Failed to save document request')
+                } finally {
+                  setReqSubmitting(false)
+                }
+              }}
+              className="space-y-4"
+            >
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-wider text-gray-700 mb-1">
+                  Document Name *
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={reqDocName}
+                  onChange={(e) => setReqDocName(e.target.value)}
+                  placeholder="e.g. Business Bank Statements"
+                  className="w-full p-2.5 border border-gray-300 rounded-lg text-xs text-gray-900 focus:outline-none focus:ring-2 focus:ring-teal-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-wider text-gray-700 mb-1">
+                  Description / Instructions
+                </label>
+                <textarea
+                  rows={3}
+                  value={reqDocDescription}
+                  onChange={(e) => setReqDocDescription(e.target.value)}
+                  placeholder="e.g. Business bank statements, last 3 months, all pages."
+                  className="w-full p-2.5 border border-gray-300 rounded-lg text-xs text-gray-900 focus:outline-none focus:ring-2 focus:ring-teal-500"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3 items-center">
+                <div>
+                  <label className="block text-xs font-bold uppercase tracking-wider text-gray-700 mb-1">
+                    Tag (Optional)
+                  </label>
+                  <input
+                    type="text"
+                    value={reqDocTag}
+                    onChange={(e) => setReqDocTag(e.target.value)}
+                    placeholder="e.g. Underwriting"
+                    className="w-full p-2 border border-gray-300 rounded-lg text-xs text-gray-900 focus:outline-none focus:ring-2 focus:ring-teal-500"
+                  />
+                </div>
+
+                <label className="flex items-center gap-2 text-xs font-semibold text-gray-700 pt-5 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={reqDocRequired}
+                    onChange={(e) => setReqDocRequired(e.target.checked)}
+                    className="rounded border-gray-300 text-teal-600 focus:ring-teal-500"
+                  />
+                  <span>Required document</span>
+                </label>
+              </div>
+
+              <div className="flex justify-end gap-2 pt-2">
+                <button
+                  type="button"
+                  disabled={reqSubmitting}
+                  onClick={() => setRequestModalOpen(false)}
+                  className="px-4 py-2 text-xs font-semibold text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors disabled:opacity-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={reqSubmitting || !reqDocName.trim()}
+                  className="px-4 py-2 text-xs font-bold text-white bg-[#1A1A1A] hover:bg-black rounded-lg transition-colors shadow-2xs disabled:opacity-50"
+                >
+                  {reqSubmitting
+                    ? 'Saving...'
+                    : editingCustomDocType !== null
+                      ? 'Save Changes'
+                      : 'Submit'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Requested Document Confirmation Modal */}
+      {deletingCustomDoc && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-xl border border-gray-200 animate-in fade-in zoom-in-95">
+            <div className="flex items-center justify-between pb-3 border-b border-gray-100 mb-4">
+              <div className="flex items-center space-x-2 text-rose-700">
+                <FiXCircle className="w-5 h-5" />
+                <h3 className="font-bold text-base text-gray-900">Delete Requested Document</h3>
+              </div>
+              <button
+                onClick={() => !deleteSubmitting && setDeletingCustomDoc(null)}
+                className="text-gray-400 hover:text-black p-1 rounded-full"
+              >
+                <FiX className="w-5 h-5" />
+              </button>
+            </div>
+
+            <p className="text-xs text-gray-600 mb-6 leading-relaxed">
+              Are you sure you want to delete <strong>{deletingCustomDoc.name}</strong>? This will remove the
+              request (and any uploaded file for it) from this merchant&apos;s portal. This action cannot be undone.
+            </p>
+
+            <div className="flex justify-end gap-2">
+              <button
+                type="button"
+                disabled={deleteSubmitting}
+                onClick={() => setDeletingCustomDoc(null)}
+                className="px-4 py-2 text-xs font-semibold text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                disabled={deleteSubmitting}
+                onClick={async () => {
+                  if (!token || !selectedMerchantId || !deletingCustomDoc || deleteSubmitting) return
+                  setDeleteSubmitting(true)
+                  try {
+                    await deleteAdminDocumentRequest(token, selectedMerchantId, deletingCustomDoc.type)
+                    toast.success('Requested document deleted')
+                    setDeletingCustomDoc(null)
+                    await loadMerchantDetail()
+                  } catch (err: any) {
+                    toast.error(err.message || 'Failed to delete requested document')
+                  } finally {
+                    setDeleteSubmitting(false)
+                  }
+                }}
+                className="px-4 py-2 text-xs font-bold text-white bg-rose-600 hover:bg-rose-700 rounded-lg transition-colors shadow-2xs disabled:opacity-50"
+              >
+                {deleteSubmitting ? 'Deleting...' : 'Delete'}
               </button>
             </div>
           </div>
