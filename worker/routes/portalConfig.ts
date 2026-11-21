@@ -1,7 +1,7 @@
 import { Env } from '../types'
 import { buildPortalPayload } from '../lib/portalPayload'
 import { generateSyncToken } from '../lib/syncToken'
-import { isValidMerchantId, syncMerchantFromGhl } from '../lib/ghl'
+import { isValidMerchantId, syncMerchantFromGhl, syncMerchantStatusFromGhl } from '../lib/ghl'
 
 export async function handlePortalConfig(request: Request, env: Env): Promise<Response> {
   const url = new URL(request.url)
@@ -88,6 +88,40 @@ export async function handlePortalConfig(request: Request, env: Env): Promise<Re
   } catch (err: any) {
     console.error('handlePortalConfig error:', err)
     return new Response(JSON.stringify({ error: 'Internal Server Error', details: err?.message }), {
+      status: 500,
+      headers: { 'Content-Type': 'application/json' },
+    })
+  }
+}
+
+/**
+ * POST /api/merchants/:id/sync-status
+ * Lightweight background check to sync only the merchant's underwriting stage from HighLevel.
+ */
+export async function handleSyncMerchantStatus(
+  _request: Request,
+  env: Env,
+  merchantId: string
+): Promise<Response> {
+  try {
+    const res = await syncMerchantStatusFromGhl(env, merchantId)
+    if (!res.ok) {
+      return new Response(JSON.stringify({ ok: false, error: res.error }), {
+        status: res.status,
+        headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' },
+      })
+    }
+
+    return new Response(
+      JSON.stringify({ ok: true, status: res.status, updated: res.updated }),
+      {
+        status: 200,
+        headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' },
+      }
+    )
+  } catch (err: any) {
+    console.error('handleSyncMerchantStatus error:', err)
+    return new Response(JSON.stringify({ ok: false, error: err?.message || 'Status sync failed' }), {
       status: 500,
       headers: { 'Content-Type': 'application/json' },
     })

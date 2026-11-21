@@ -162,16 +162,7 @@ export function parseOpportunity(
   }
 
   // 2. Stage mapping (pipelineStageId -> value 1..5)
-  let status = 1 // default to 1 (Onboarding booked) if unmapped
-  const pipelineStageId = (opp.pipelineStageId || '').trim()
-  if (pipelineStageId) {
-    for (const stage of stageList) {
-      if (Array.isArray(stage.aliases) && stage.aliases.includes(pipelineStageId)) {
-        status = Number(stage.value)
-        break
-      }
-    }
-  }
+  const status = resolveMerchantStageStatus(opp.pipelineStageId, stageList)
 
   // 3. Industry Type mapping (fallback to 'general')
   let industry = 'general'
@@ -399,4 +390,213 @@ export async function ensureMerchantExists(env: Env, merchantId: string): Promis
   }
 
   return await syncMerchantFromGhl(env, trimmedId)
+}
+
+/**
+ * Resolves a HighLevel pipelineStageId to our 1..5 merchant status.
+ * Any stage beyond 5 (Live and processing) is clamped to 5.
+ * If unmapped and the merchant is already at 5, keeps 5.
+ */
+export function resolveMerchantStageStatus(
+  pipelineStageId: string | undefined,
+  stageList: Array<{ value: number; name: string; aliases?: string[] }>,
+  currentStatus?: number
+): number {
+  const trimmedStage = (pipelineStageId || '').trim()
+  if (trimmedStage) {
+    for (const stage of stageList) {
+      if (Array.isArray(stage.aliases) && stage.aliases.includes(trimmedStage)) {
+        return Math.min(5, Math.max(1, Number(stage.value)))
+      }
+    }
+  }
+  if (currentStatus !== undefined && currentStatus >= 5) {
+    return 5
+  }
+  return currentStatus !== undefined ? Math.min(5, Math.max(1, currentStatus)) : 1
+}
+
+export async function loadStageList(
+  env: Env
+): Promise<Array<{ value: number; name: string; aliases?: string[] }>> {
+  const row = await env.DB.prepare("SELECT value FROM app_config WHERE key = 'merchant_stages'").first<{
+    value: string
+  }>()
+  if (row?.value) {
+    try {
+      const parsed = JSON.parse(row.value)
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        return parsed
+      }
+    } catch {
+      // fall back to default
+    }
+  }
+  return DEFAULT_STAGE_LIST
+}
+
+/**
+ * Syncs ONLY the merchant's status from HighLevel into D1.
+ * Clamps any stage beyond 5 (Live and processing) to 5.
+ */
+export async function syncMerchantStatusFromGhl(
+  env: Env,
+  merchantId: string,
+  preloadedStageList?: Array<{ value: number; name: string; aliases?: string[] }>
+): Promise<{ ok: true; status: number; updated: boolean } | { ok: false; status: number; error: string }> {
+  const trimmedId = (merchantId || '').trim()
+  if (!isValidMerchantId(trimmedId)) {
+    return { ok: false, status: 400, error: 'Invalid merchant identifier format' }
+  }
+  if (!env.GHL_PRIVATE_TOKEN) {
+    return { ok: false, status: 503, error: 'HighLevel API token is not configured' }
+  }
+
+  const existing = await env.DB.prepare('SELECT id, status FROM merchants WHERE id = ?')
+    .bind(trimmedId)
+    .first<{ id: string; status: number }>()
+
+  if (!existing) {
+    return { ok: false, status: 404, error: 'Merchant not found' }
+  }
+
+  const opp = await fetchGhlOpportunity(env, trimmedId)
+  if (!opp) {
+    return { ok: false, status: 404, error: 'Merchant opportunity not found on HighLevel' }
+  }
+
+  const stageList = preloadedStageList || (await loadStageList(env))
+  const nextStatus = resolveMerchantStageStatus(opp.pipelineStageId, stageList, existing.status)
+
+  if (nextStatus !== existing.status) {
+    await env.DB.prepare("UPDATE merchants SET status = ?, updated_at = datetime('now') WHERE id = ?")
+      .bind(nextStatus, trimmedId)
+      .run()
+    return { ok: true, status: nextStatus, updated: true }
+  }
+
+  return { ok: true, status: nextStatus, updated: false }
+}
+
+/**
+ * Daily CRON helper: syncs status only for all merchants in D1 from HighLevel.
+ */
+export async function syncAllMerchantStatusesFromGhl(
+  env: Env
+): Promise<{ total: number; updated: number; failed: number }> {
+  if (!env.GHL_PRIVATE_TOKEN) {
+    return { total: 0, updated: 0, failed: 0 }
+  }
+
+  const stageList = await loadStageList(env)
+  const rows = await env.DB.prepare('SELECT id FROM merchants').all<{ id: string }>()
+  const merchants = rows.results || []
+
+  let updated = 0
+  let failed = 0
+
+  for (const m of merchants) {
+    try {
+      const res = await syncMerchantStatusFromGhl(env, m.id, stageList)
+      if (res.ok) {
+        if (res.updated) updated++
+      } else {
+        failed++
+      }
+    } catch (err) {
+      console.error(`CRON status sync failed for merchant ${m.id}:`, err)
+      failed++
+    }
+  }
+
+  return { total: merchants.length, updated, failed }
+}
+
+function escapeHtmlBasic(str: string): string {
+  return str
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;')
+}
+
+/**
+ * Sends an email notification to the merchant's HighLevel contact when a new document is requested.
+ * Non-fatal: returns { sent: false, reason } if GHL is unconfigured or the request fails.
+ */
+export async function sendDocumentRequestEmail(
+  env: Env,
+  merchantId: string,
+  merchantName: string,
+  docName: string,
+  docDescription: string,
+  portalUrl: string
+): Promise<{ sent: boolean; reason?: string }> {
+  if (!env.GHL_PRIVATE_TOKEN) {
+    return { sent: false, reason: 'GHL_PRIVATE_TOKEN is not configured' }
+  }
+
+  try {
+    const opp = await fetchGhlOpportunity(env, merchantId)
+    const contactId = typeof opp?.contactId === 'string' ? opp.contactId.trim() : ''
+    if (!contactId) {
+      return { sent: false, reason: 'No contactId found on HighLevel opportunity' }
+    }
+
+    const safeMerchant = escapeHtmlBasic(merchantName)
+    const safeDocName = escapeHtmlBasic(docName)
+    const safeDesc = docDescription ? `<p style="color:#4B5563;margin:8px 0 0;">${escapeHtmlBasic(docDescription)}</p>` : ''
+    const safeUrl = escapeHtmlBasic(portalUrl)
+
+    const html = `
+      <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;color:#1A1A1A;">
+        <h2 style="margin-bottom:12px;">Additional Document Requested</h2>
+        <p>Hello,</p>
+        <p>Your onboarding manager has requested an additional document for <strong>${safeMerchant}</strong>:</p>
+        <div style="background:#F9FAFB;border:1px solid #E5E7EB;border-radius:8px;padding:14px 16px;margin:16px 0;">
+          <strong style="font-size:15px;">${safeDocName}</strong>
+          ${safeDesc}
+        </div>
+        <p>Please upload this document through your merchant portal:</p>
+        <p style="margin:20px 0;">
+          <a href="${safeUrl}" style="background:#1A1A1A;color:#FFFFFF;padding:10px 18px;border-radius:6px;text-decoration:none;font-weight:bold;display:inline-block;">
+            Open Merchant Portal
+          </a>
+        </p>
+        <p style="font-size:12px;color:#6B7280;">Or copy this link: ${safeUrl}</p>
+      </div>
+    `.trim()
+
+    const controller = new AbortController()
+    const timeoutId = setTimeout(() => controller.abort(), 8000)
+
+    const res = await fetch('https://services.leadconnectorhq.com/conversations/messages', {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${env.GHL_PRIVATE_TOKEN}`,
+        Version: '2021-04-15',
+        'Content-Type': 'application/json',
+        Accept: 'application/json',
+      },
+      body: JSON.stringify({
+        type: 'Email',
+        contactId,
+        subject: `Document Requested: ${docName}`,
+        html,
+      }),
+      signal: controller.signal,
+    })
+
+    clearTimeout(timeoutId)
+
+    if (!res.ok) {
+      const errBody = await res.text().catch(() => '')
+      return { sent: false, reason: `HighLevel email API error (${res.status}): ${errBody}` }
+    }
+
+    return { sent: true }
+  } catch (err: any) {
+    return { sent: false, reason: err?.message || 'Failed to send notification email' }
+  }
 }

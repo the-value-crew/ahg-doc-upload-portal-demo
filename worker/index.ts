@@ -1,6 +1,7 @@
 import { Env } from './types'
 import { handleAdminShell } from './middleware/adminShell'
-import { handlePortalConfig } from './routes/portalConfig'
+import { handlePortalConfig, handleSyncMerchantStatus } from './routes/portalConfig'
+import { syncAllMerchantStatusesFromGhl } from './lib/ghl'
 import { handleFindMerchantOnGhl } from './routes/findMerchantOnGhl'
 import { handleUpload } from './routes/upload'
 import { handleAdminLogin } from './routes/adminLogin'
@@ -9,6 +10,9 @@ import {
   handleAdminGetMerchants,
   handleAdminGetMerchantDetail,
   handleAdminUpdateMerchantStatus,
+  handleAdminCreateDocumentRequest,
+  handleAdminUpdateDocumentRequest,
+  handleAdminDeleteDocumentRequest,
   handleAdminUpdateStatus,
   handleCreateSignedDownloadUrl,
   handleMerchantSignedDownloadUrl,
@@ -30,6 +34,13 @@ export default {
       // Portal Config
       if (pathname === '/api/portal-config' && request.method === 'GET') {
         return await handlePortalConfig(request, env)
+      }
+
+      // POST /api/merchants/:id/sync-status
+      const syncStatusMatch = pathname.match(/^\/api\/merchants\/([^/]+)\/sync-status$/)
+      if (syncStatusMatch && request.method === 'POST') {
+        const merchantId = decodeURIComponent(syncStatusMatch[1])
+        return await handleSyncMerchantStatus(request, env, merchantId)
       }
 
       // POST /api/find-merchant-on-ghl
@@ -68,6 +79,26 @@ export default {
       // GET /api/admin/merchants (Search & Paginated)
       if (pathname === '/api/admin/merchants' && request.method === 'GET') {
         return await handleAdminGetMerchants(request, env)
+      }
+
+      // POST /api/admin/merchants/:id/document-requests
+      const docRequestMatch = pathname.match(/^\/api\/admin\/merchants\/([^/]+)\/document-requests$/)
+      if (docRequestMatch && request.method === 'POST') {
+        const merchantId = decodeURIComponent(docRequestMatch[1])
+        return await handleAdminCreateDocumentRequest(request, env, merchantId)
+      }
+
+      // PATCH / DELETE /api/admin/merchants/:id/document-requests/:type
+      const docRequestItemMatch = pathname.match(/^\/api\/admin\/merchants\/([^/]+)\/document-requests\/([^/]+)$/)
+      if (docRequestItemMatch && request.method === 'PATCH') {
+        const merchantId = decodeURIComponent(docRequestItemMatch[1])
+        const docTypeStr = decodeURIComponent(docRequestItemMatch[2])
+        return await handleAdminUpdateDocumentRequest(request, env, merchantId, docTypeStr)
+      }
+      if (docRequestItemMatch && request.method === 'DELETE') {
+        const merchantId = decodeURIComponent(docRequestItemMatch[1])
+        const docTypeStr = decodeURIComponent(docRequestItemMatch[2])
+        return await handleAdminDeleteDocumentRequest(request, env, merchantId, docTypeStr)
       }
 
       // PATCH /api/admin/merchants/:id/status
@@ -119,5 +150,17 @@ export default {
         headers: { 'Content-Type': 'application/json' },
       })
     }
+  },
+
+  async scheduled(_event: ScheduledEvent, env: Env, ctx: ExecutionContext): Promise<void> {
+    ctx.waitUntil(
+      syncAllMerchantStatusesFromGhl(env)
+        .then((summary) => {
+          console.log('Daily merchant status CRON completed:', summary)
+        })
+        .catch((err) => {
+          console.error('Daily merchant status CRON error:', err)
+        })
+    )
   },
 }

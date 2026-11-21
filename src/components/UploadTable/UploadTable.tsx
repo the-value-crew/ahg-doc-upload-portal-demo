@@ -19,6 +19,8 @@ interface UploadTableProps {
   onReject?: (docType: number) => void
   onReset?: (docType: number) => void
   onView?: (docType: number, filename?: string) => void
+  onEditCustomDoc?: (item: ChecklistItem) => void
+  onDeleteCustomDoc?: (item: ChecklistItem) => void
 }
 
 function UploadTable({
@@ -35,6 +37,8 @@ function UploadTable({
   onReject,
   onReset,
   onView,
+  onEditCustomDoc,
+  onDeleteCustomDoc,
 }: UploadTableProps) {
   const [loading, setLoading] = useState<boolean>(false)
 
@@ -97,6 +101,8 @@ function UploadTable({
                 onReject={onReject}
                 onReset={onReset}
                 onView={onView}
+                onEditCustomDoc={onEditCustomDoc}
+                onDeleteCustomDoc={onDeleteCustomDoc}
               />
             ))}
           </tbody>

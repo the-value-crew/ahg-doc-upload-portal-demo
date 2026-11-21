@@ -206,3 +206,90 @@ export async function requestMerchantDownloadUrl(
   }
   return res.json()
 }
+
+export async function createAdminDocumentRequest(
+  token: string,
+  merchantId: string,
+  payload: {
+    name: string
+    description: string
+    required: boolean
+    tag: string | null
+  }
+): Promise<{ success: boolean; documentType: number; emailSent: boolean; emailReason?: string | null }> {
+  const res = await fetch(`/api/admin/merchants/${encodeURIComponent(merchantId)}/document-requests`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(payload),
+  })
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}))
+    throw new Error(err.error || `Failed to create document request: ${res.status}`)
+  }
+  return res.json()
+}
+
+export async function updateAdminDocumentRequest(
+  token: string,
+  merchantId: string,
+  documentType: number,
+  payload: {
+    name: string
+    description: string
+    required: boolean
+    tag: string | null
+  }
+): Promise<{ success: boolean }> {
+  const res = await fetch(
+    `/api/admin/merchants/${encodeURIComponent(merchantId)}/document-requests/${encodeURIComponent(documentType)}`,
+    {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(payload),
+    }
+  )
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}))
+    throw new Error(err.error || `Failed to update document request: ${res.status}`)
+  }
+  return res.json()
+}
+
+export async function deleteAdminDocumentRequest(
+  token: string,
+  merchantId: string,
+  documentType: number
+): Promise<{ success: boolean }> {
+  const res = await fetch(
+    `/api/admin/merchants/${encodeURIComponent(merchantId)}/document-requests/${encodeURIComponent(documentType)}`,
+    {
+      method: 'DELETE',
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    }
+  )
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}))
+    throw new Error(err.error || `Failed to delete document request: ${res.status}`)
+  }
+  return res.json()
+}
+
+export async function syncMerchantStatus(
+  merchantId: string
+): Promise<{ ok: boolean; status?: number; updated?: boolean }> {
+  const res = await fetch(`/api/merchants/${encodeURIComponent(merchantId)}/sync-status`, {
+    method: 'POST',
+  })
+  if (!res.ok) {
+    return { ok: false }
+  }
+  return res.json()
+}

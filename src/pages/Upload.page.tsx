@@ -53,6 +53,7 @@ function UploadPage() {
   }
 
   const sections = config.industry?.sections || []
+  const requestedItems = checklist.filter((item) => item.sectionId === 'requested_documents')
 
   return (
     <DefaultLayout branding={config.branding} supportContact={config.supportContact}>
@@ -94,6 +95,20 @@ function UploadPage() {
         {/* Dynamic Industry-Specific Document Tables Section */}
         <section className="container pb-20">
           <div className="space-y-12">
+            {requestedItems.length > 0 && (
+              <UploadTable
+                key="requested_documents"
+                sectionTitle="Requested Documents"
+                sectionDescription="Documents requested by your onboarding manager"
+                items={requestedItems}
+                merchantId={merchantId}
+                supportContact={config.supportContact}
+                onFileUpload={refresh}
+                onRefresh={refresh}
+                adminMode={false}
+              />
+            )}
+
             {sections.map((section) => {
               const sectionItems = checklist.filter((item) => item.sectionId === section.id)
               return (

@@ -11,6 +11,8 @@ import {
   FiFileText,
   FiDownload,
   FiExternalLink,
+  FiEdit2,
+  FiTrash2,
 } from 'react-icons/fi'
 import { requestMerchantDownloadUrl } from '../../services/api.client'
 import { toast } from 'react-toastify'
@@ -26,6 +28,8 @@ interface TableRowProps {
   onReject?: (docType: number) => void
   onReset?: (docType: number) => void
   onView?: (docType: number, filename?: string) => void
+  onEditCustomDoc?: (item: ChecklistItem) => void
+  onDeleteCustomDoc?: (item: ChecklistItem) => void
 }
 
 function TableRow({
@@ -39,11 +43,18 @@ function TableRow({
   onReject,
   onReset,
   onView,
+  onEditCustomDoc,
+  onDeleteCustomDoc,
 }: TableRowProps) {
   const [expanded, setExpanded] = useState<boolean>(false)
   const [dropzoneVisibility, setDropzoneVisibility] = useState<boolean>(false)
 
-  const isUploaded = item.status !== FileStatus.NOT_UPLOADED && (item.status as any) !== 'not-uploaded' && item.status !== 0
+  const hasFile = item.hasFile !== undefined ? item.hasFile : Boolean(item.filename || item.sharepointItemId)
+  const isUploaded =
+    item.status !== FileStatus.NOT_UPLOADED &&
+    (item.status as any) !== 'not-uploaded' &&
+    item.status !== 0 &&
+    hasFile
   const isRejected = item.status === FileStatus.REJECTED || item.status === 3
 
   const handleMerchantDownload = async () => {
@@ -148,7 +159,11 @@ function TableRow({
 
                 {onStatusChange ? (
                   <select
-                    value={item.status === 'not-uploaded' || (item.status as any) === FileStatus.NOT_UPLOADED ? 'not-uploaded' : Number(item.status)}
+                    value={
+                      item.status === 'not-uploaded' || (item.status as any) === FileStatus.NOT_UPLOADED
+                        ? 'not-uploaded'
+                        : Number(item.status)
+                    }
                     onChange={(e) => {
                       const val = e.target.value
                       if (val !== 'not-uploaded') {
@@ -199,6 +214,28 @@ function TableRow({
                       )}
                     </div>
                   )
+                )}
+
+                {item.isCustom && onEditCustomDoc && (
+                  <button
+                    type="button"
+                    onClick={() => onEditCustomDoc(item)}
+                    className="p-1.5 text-gray-600 hover:text-black bg-gray-50 hover:bg-gray-100 rounded-lg border border-gray-200 transition-colors"
+                    title="Edit requested document"
+                  >
+                    <FiEdit2 className="w-3.5 h-3.5" />
+                  </button>
+                )}
+
+                {item.isCustom && onDeleteCustomDoc && (
+                  <button
+                    type="button"
+                    onClick={() => onDeleteCustomDoc(item)}
+                    className="p-1.5 text-rose-600 hover:text-rose-700 bg-rose-50 hover:bg-rose-100 rounded-lg border border-rose-200 transition-colors"
+                    title="Delete requested document"
+                  >
+                    <FiTrash2 className="w-3.5 h-3.5" />
+                  </button>
                 )}
               </div>
             </div>

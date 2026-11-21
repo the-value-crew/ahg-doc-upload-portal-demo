@@ -23,6 +23,7 @@ export function buildChecklist(industryConfig: IndustryConfig, docRows: any[]): 
       const uploadedAt = match ? (match.uploaded_at || match.uploadedAt || undefined) : undefined
       const note = match ? (match.note || null) : null
       const sharepointItemId = match ? (match.sharepoint_item_id || match.sharepointItemId || undefined) : undefined
+      const hasFile = Boolean(filename || sharepointItemId)
 
       items.push({
         type: doc.type,
@@ -38,8 +39,50 @@ export function buildChecklist(industryConfig: IndustryConfig, docRows: any[]): 
         uploadedAt,
         note,
         sharepointItemId,
+        isCustom: false,
+        hasFile,
       })
     }
+  }
+
+  // Append per-merchant custom requested documents (type >= 1001 or custom_name present)
+  const standardTypes = new Set(items.map((it) => it.type))
+  const customRows = docRows
+    .filter((r) => {
+      const typeNum = Number(r.document_type !== undefined ? r.document_type : r.documentType)
+      return !standardTypes.has(typeNum) && (Boolean(r.custom_name) || typeNum >= 1001)
+    })
+    .sort((a, b) => {
+      const aType = Number(a.document_type !== undefined ? a.document_type : a.documentType)
+      const bType = Number(b.document_type !== undefined ? b.document_type : b.documentType)
+      return aType - bType
+    })
+
+  for (const r of customRows) {
+    const typeNum = Number(r.document_type !== undefined ? r.document_type : r.documentType)
+    const filename = r.filename || undefined
+    const sharepointItemId = r.sharepoint_item_id || r.sharepointItemId || undefined
+    const hasFile = Boolean(filename || sharepointItemId)
+    const status: FileStatus | 'not-uploaded' = hasFile
+      ? (Number(r.status) as FileStatus)
+      : FileStatus.NOT_UPLOADED
+
+    items.push({
+      type: typeNum,
+      name: r.custom_name || `Requested Document #${typeNum}`,
+      description: r.custom_description || '',
+      tag: r.custom_tag || null,
+      required: r.custom_required !== 0,
+      sectionId: 'requested_documents',
+      sectionTitle: 'Requested Documents',
+      status,
+      filename,
+      uploadedAt: r.uploaded_at || r.uploadedAt || undefined,
+      note: r.note || null,
+      sharepointItemId,
+      isCustom: true,
+      hasFile,
+    })
   }
 
   return items

@@ -1,6 +1,6 @@
 import { Env } from '../types'
 import { requireAdminAuth } from '../middleware/auth'
-import { ensureMerchantExists, isValidMerchantId } from '../lib/ghl'
+import { ensureMerchantExists, isValidMerchantId, sendDocumentRequestEmail } from '../lib/ghl'
 import { buildChecklist, computeStats } from '../../shared/checklist'
 import { AdminMerchantsResponse, ChecklistStats, FileStatus } from '../../shared/types'
 
@@ -126,7 +126,8 @@ export async function handleAdminGetMerchants(request: Request, env: Env): Promi
     const placeholders = merchants.map(() => '?').join(',')
     const mIds = merchants.map((m) => m.id)
     const docsRes = await env.DB.prepare(
-      `SELECT merchant_id, document_type, status, note, uploaded_at, filename
+      `SELECT merchant_id, document_type, status, note, uploaded_at, filename, sharepoint_item_id,
+              custom_name, custom_description, custom_required, custom_tag
        FROM documents
        WHERE merchant_id IN (${placeholders})`
     )
@@ -234,7 +235,8 @@ export async function handleAdminGetMerchantDetail(request: Request, env: Env, m
 
   // Fetch document rows
   const docRows = await env.DB.prepare(
-    `SELECT document_type, status, note, uploaded_at, status_updated_at, filename, sharepoint_item_id
+    `SELECT document_type, status, note, uploaded_at, status_updated_at, filename, sharepoint_item_id,
+            custom_name, custom_description, custom_required, custom_tag
      FROM documents
      WHERE merchant_id = ?
      ORDER BY uploaded_at DESC`
@@ -325,6 +327,241 @@ export async function handleAdminUpdateMerchantStatus(request: Request, env: Env
 }
 
 /**
+ * POST /api/admin/merchants/:id/document-requests
+ * Creates a per-merchant custom document request (document_type starting at 1001, status = 1)
+ * and sends an email notification to the merchant via HighLevel.
+ */
+export async function handleAdminCreateDocumentRequest(
+  request: Request,
+  env: Env,
+  merchantId: string
+): Promise<Response> {
+  const auth = await requireAdminAuth(request, env)
+  if (auth instanceof Response) return auth
+
+  let body: any
+  try {
+    body = await request.json()
+  } catch {
+    return new Response(JSON.stringify({ error: 'Invalid JSON payload' }), {
+      status: 400,
+      headers: { 'Content-Type': 'application/json' },
+    })
+  }
+
+  const name = typeof body?.name === 'string' ? body.name.trim() : ''
+  const description = typeof body?.description === 'string' ? body.description.trim() : ''
+  const required = body?.required !== false
+  const tag = typeof body?.tag === 'string' && body.tag.trim() ? body.tag.trim() : null
+
+  if (!name) {
+    return new Response(JSON.stringify({ error: 'Document name is required' }), {
+      status: 400,
+      headers: { 'Content-Type': 'application/json' },
+    })
+  }
+
+  const ensured = await ensureMerchantExists(env, merchantId)
+  if (!ensured.ok) {
+    return new Response(JSON.stringify({ error: ensured.error, code: ensured.code }), {
+      status: ensured.status === 400 ? 404 : ensured.status,
+      headers: { 'Content-Type': 'application/json' },
+    })
+  }
+  const merchant = ensured.merchant
+
+  // Auto-assign document_type starting at 1001
+  const nextRow = await env.DB.prepare(
+    `SELECT COALESCE(MAX(document_type), 1000) + 1 AS nextType
+     FROM documents
+     WHERE merchant_id = ? AND document_type >= 1001`
+  )
+    .bind(merchant.id)
+    .first<{ nextType: number }>()
+
+  const documentType = nextRow?.nextType && nextRow.nextType >= 1001 ? nextRow.nextType : 1001
+  const now = new Date().toISOString()
+
+  await env.DB.prepare(
+    `INSERT INTO documents (
+       merchant_id, document_type, status, note, uploaded_at, status_updated_at,
+       filename, sharepoint_item_id, custom_name, custom_description, custom_required, custom_tag
+     ) VALUES (?, ?, 1, NULL, ?, ?, NULL, NULL, ?, ?, ?, ?)`
+  )
+    .bind(
+      merchant.id,
+      documentType,
+      now,
+      now,
+      name,
+      description,
+      required ? 1 : 0,
+      tag
+    )
+    .run()
+
+  const origin = new URL(request.url).origin
+  const portalUrl = `${origin}/?merchant=${encodeURIComponent(merchant.id)}`
+  const emailResult = await sendDocumentRequestEmail(
+    env,
+    merchant.id,
+    merchant.name,
+    name,
+    description,
+    portalUrl
+  )
+
+  return new Response(
+    JSON.stringify({
+      success: true,
+      merchantId: merchant.id,
+      documentType,
+      status: 1,
+      emailSent: emailResult.sent,
+      emailReason: emailResult.reason || null,
+    }),
+    {
+      status: 201,
+      headers: { 'Content-Type': 'application/json' },
+    }
+  )
+}
+
+/**
+ * PATCH /api/admin/merchants/:id/document-requests/:type
+ * Updates a custom requested document's metadata (name, description, required, tag).
+ */
+export async function handleAdminUpdateDocumentRequest(
+  request: Request,
+  env: Env,
+  merchantId: string,
+  docTypeStr: string
+): Promise<Response> {
+  const auth = await requireAdminAuth(request, env)
+  if (auth instanceof Response) return auth
+
+  const documentType = parseInt(docTypeStr, 10)
+  if (isNaN(documentType) || documentType < 1001) {
+    return new Response(JSON.stringify({ error: 'Invalid custom document type' }), {
+      status: 400,
+      headers: { 'Content-Type': 'application/json' },
+    })
+  }
+
+  let body: any
+  try {
+    body = await request.json()
+  } catch {
+    return new Response(JSON.stringify({ error: 'Invalid JSON payload' }), {
+      status: 400,
+      headers: { 'Content-Type': 'application/json' },
+    })
+  }
+
+  const name = typeof body?.name === 'string' ? body.name.trim() : ''
+  const description = typeof body?.description === 'string' ? body.description.trim() : ''
+  const required = body?.required !== false
+  const tag = typeof body?.tag === 'string' && body.tag.trim() ? body.tag.trim() : null
+
+  if (!name) {
+    return new Response(JSON.stringify({ error: 'Document name is required' }), {
+      status: 400,
+      headers: { 'Content-Type': 'application/json' },
+    })
+  }
+
+  const now = new Date().toISOString()
+  const result = await env.DB.prepare(
+    `UPDATE documents
+     SET custom_name = ?, custom_description = ?, custom_required = ?, custom_tag = ?, status_updated_at = ?
+     WHERE merchant_id = ? AND document_type = ? AND (custom_name IS NOT NULL OR document_type >= 1001)`
+  )
+    .bind(name, description, required ? 1 : 0, tag, now, merchantId, documentType)
+    .run()
+
+  if (!result.meta.changes) {
+    return new Response(JSON.stringify({ error: 'Requested document not found' }), {
+      status: 404,
+      headers: { 'Content-Type': 'application/json' },
+    })
+  }
+
+  return new Response(
+    JSON.stringify({
+      success: true,
+      merchantId,
+      documentType,
+      name,
+      description,
+      required,
+      tag,
+    }),
+    {
+      status: 200,
+      headers: { 'Content-Type': 'application/json' },
+    }
+  )
+}
+
+/**
+ * DELETE /api/admin/merchants/:id/document-requests/:type
+ * Deletes a custom requested document (and its R2 object if uploaded).
+ */
+export async function handleAdminDeleteDocumentRequest(
+  request: Request,
+  env: Env,
+  merchantId: string,
+  docTypeStr: string
+): Promise<Response> {
+  const auth = await requireAdminAuth(request, env)
+  if (auth instanceof Response) return auth
+
+  const documentType = parseInt(docTypeStr, 10)
+  if (isNaN(documentType) || documentType < 1001) {
+    return new Response(JSON.stringify({ error: 'Invalid custom document type' }), {
+      status: 400,
+      headers: { 'Content-Type': 'application/json' },
+    })
+  }
+
+  const existing = await env.DB.prepare(
+    `SELECT sharepoint_item_id
+     FROM documents
+     WHERE merchant_id = ? AND document_type = ? AND (custom_name IS NOT NULL OR document_type >= 1001)`
+  )
+    .bind(merchantId, documentType)
+    .first<{ sharepoint_item_id: string | null }>()
+
+  if (!existing) {
+    return new Response(JSON.stringify({ error: 'Requested document not found' }), {
+      status: 404,
+      headers: { 'Content-Type': 'application/json' },
+    })
+  }
+
+  if (existing.sharepoint_item_id && existing.sharepoint_item_id.startsWith('r2:') && env.DOCS_BUCKET) {
+    const r2Key = existing.sharepoint_item_id.slice(3)
+    try {
+      await env.DOCS_BUCKET.delete(r2Key)
+    } catch (err) {
+      console.error('Failed to delete R2 object for custom document:', err)
+    }
+  }
+
+  await env.DB.prepare(
+    `DELETE FROM documents
+     WHERE merchant_id = ? AND document_type = ? AND (custom_name IS NOT NULL OR document_type >= 1001)`
+  )
+    .bind(merchantId, documentType)
+    .run()
+
+  return new Response(JSON.stringify({ success: true, merchantId, documentType }), {
+    status: 200,
+    headers: { 'Content-Type': 'application/json' },
+  })
+}
+
+/**
  * PATCH /api/admin/documents/status
  * Updates document verification status (1 = Pending, 2 = Verified, 3 = Rejected) with note
  */
@@ -390,7 +627,11 @@ export async function handleAdminUpdateStatus(request: Request, env: Env): Promi
   if (configRow?.value) {
     const industries = JSON.parse(configRow.value)
     const indConfig = industries[merchant.industry] || industries.general
-    const docRows = await env.DB.prepare('SELECT document_type, status, note, uploaded_at, filename FROM documents WHERE merchant_id = ?')
+    const docRows = await env.DB.prepare(
+      `SELECT document_type, status, note, uploaded_at, filename, sharepoint_item_id,
+              custom_name, custom_description, custom_required, custom_tag
+       FROM documents WHERE merchant_id = ?`
+    )
       .bind(merchantId)
       .all()
     checklist = buildChecklist(indConfig, docRows.results || [])
